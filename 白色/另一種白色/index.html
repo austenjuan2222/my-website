@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阮孟杰 - 個人首頁 | Minimalism</title>
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-ZSVL2PNT60');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #fcfcfc; color: #111; }
+    </style>
+</head>
+<body class="antialiased font-sans selection:bg-black selection:text-white">
+
+    <header class="max-w-6xl mx-auto px-6 h-24 flex items-center justify-between border-b border-neutral-200">
+        <a href="#" class="font-black text-xl tracking-tighter">MENG-JIE.</a>
+        <nav class="hidden md:flex space-x-8 text-sm font-medium text-neutral-500">
+            <a href="#home" class="text-black font-semibold">Home</a>
+            <a href="#news" class="hover:text-black transition">News <span class="text-xs text-neutral-400 ml-1">Coming soon</span></a>
+            <a href="#tools" class="hover:text-black transition">Tools <span class="text-xs text-neutral-400 ml-1">Coming soon</span></a>
+            <a href="#games" class="hover:text-black transition">Games <span class="text-xs text-neutral-400 ml-1">Coming soon</span></a>
+        </nav>
+        <a href="mailto:austenjuan2@gmail.com" class="text-sm font-semibold underline underline-offset-4">聯絡我</a>
+    </header>
+
+    <main id="home" class="max-w-5xl mx-auto px-6 py-20 space-y-24">
+        
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div class="space-y-6">
+                <span class="inline-block px-3 py-1 bg-neutral-100 text-xs font-semibold uppercase tracking-widest rounded-full">Personal Profile</span>
+                <h1 class="text-6xl md:text-7xl font-black tracking-tight leading-none">阮孟杰</h1>
+                <p class="text-xl text-neutral-600 font-medium">大同大學資訊工程學系四年級</p>
+            </div>
+            <div class="w-full h-80 rounded-3xl overflow-hidden shadow-2xl bg-neutral-200 border border-neutral-300">
+                <img src="images.jpg" alt="阮孟杰照片" class="w-full h-full object-cover">
+            </div>
+        </section>
+
+        <section class="border-t border-neutral-200 pt-16">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-6">About Me</h2>
+            <p class="text-2xl md:text-3xl font-light text-neutral-800 leading-relaxed max-w-4xl">
+                我是阮孟杰，目前就讀於大同大學資訊工程學系四年級（2022年至今）。在學期間，我專注於智慧物聯網專題研究，並積極探索 vibe coding 與新興技術。我抱持著好學且能接受新事物的態度，持續充實自我。在課業與研究之餘，我的興趣涵蓋健身與出國旅遊，熱愛在不同體驗中拓展視野。
+            </p>
+        </section>
+
+        <section class="border-t border-neutral-200 pt-16 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <h3 class="font-bold text-lg">準備好交流了嗎？</h3>
+                <p class="text-neutral-500 text-sm mt-1">隨時歡迎透過郵件與我聯繫</p>
+            </div>
+            <a href="mailto:austenjuan2@gmail.com" class="px-8 py-4 bg-black text-white font-medium rounded-full hover:bg-neutral-800 transition">
+                發送郵件給我
+            </a>
+        </section>
+
+    </main>
+
+    <footer class="max-w-5xl mx-auto px-6 py-12 border-t border-neutral-200 text-sm text-neutral-400 flex justify-between">
+        <p>&copy; 2026 阮孟杰. All rights reserved.</p>
+        <p>austenjuan2@gmail.com</p>
+    </footer>
+
+</body>
+</html>
