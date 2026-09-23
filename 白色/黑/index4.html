@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阮孟杰 - 個人首頁 | Dark Mode</title>
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-ZSVL2PNT60');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b0f19; color: #f3f4f6; }
+        .dark-card { background: #131c2e; border: 1px solid #1e293b; }
+    </style>
+</head>
+<body class="antialiased font-sans">
+
+    <header class="sticky top-0 z-50 bg-[#0b0f19]/80 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="#" class="font-bold text-lg text-cyan-400 tracking-wider">Meng-Jie</a>
+            <nav class="hidden md:flex space-x-8 text-sm font-medium text-slate-400">
+                <a href="#home" class="text-cyan-400">Home</a>
+                <a href="#news" class="hover:text-slate-200 transition">News <span class="text-xs text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-1.5 py-0.5 rounded ml-1">Coming soon</span></a>
+                <a href="#tools" class="hover:text-slate-200 transition">Tools <span class="text-xs text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-1.5 py-0.5 rounded ml-1">Coming soon</span></a>
+                <a href="#games" class="hover:text-slate-200 transition">Games <span class="text-xs text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-1.5 py-0.5 rounded ml-1">Coming soon</span></a>
+            </nav>
+            <a href="mailto:austenjuan2@gmail.com" class="text-sm font-medium px-4 py-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition">聯絡我</a>
+        </div>
+    </header>
+
+    <main id="home" class="max-w-5xl mx-auto px-6 py-12 space-y-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="dark-card rounded-2xl p-6 flex flex-col items-center justify-center text-center">
+                <div class="w-36 h-36 rounded-xl overflow-hidden shadow-lg mb-4 border border-slate-700">
+                    <img src="images.jpg" alt="阮孟杰照片" class="w-full h-full object-cover">
+                </div>
+                <h1 class="text-2xl font-bold text-white">阮孟杰</h1>
+                <p class="text-sm text-cyan-400 font-medium mt-1">大同大學資工系四年級</p>
+            </div>
+
+            <div class="dark-card rounded-2xl p-8 md:col-span-2 flex flex-col justify-center">
+                <h2 class="text-xl font-bold mb-4 text-white flex items-center">
+                    <span class="w-2 h-2 bg-cyan-400 rounded-full mr-2"></span>關於我
+                </h2>
+                <p class="text-slate-300 leading-relaxed">
+                    我是阮孟杰，目前就讀於大同大學資訊工程學系四年級（2022年至今）。在學期間，我專注於智慧物聯網專題研究，並積極探索 vibe coding 與新興技術。我抱持著好學且能接受新事物的態度，持續充實自我。在課業與研究之餘，我的興趣涵蓋健身與出國旅遊，熱愛在不同體驗中拓展視野。
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="dark-card rounded-2xl p-6">
+                <h3 class="font-bold text-base mb-2 text-white">💻 專長領域</h3>
+                <p class="text-slate-400 text-sm">智慧物聯網專題研究、vibe coding</p>
+            </div>
+            <div class="dark-card rounded-2xl p-6">
+                <h3 class="font-bold text-base mb-2 text-white">💪 個人興趣</h3>
+                <p class="text-slate-400 text-sm">健身訓練、出國旅遊</p>
+            </div>
+            <div class="dark-card rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-base mb-2 text-white">✨ 核心態度</h3>
+                    <p class="text-slate-400 text-sm">好學、樂於接受新事物</p>
+                </div>
+                <div class="mt-4">
+                    <a href="mailto:austenjuan2@gmail.com" class="block w-full py-2 px-4 bg-cyan-500 text-slate-950 font-semibold text-center rounded-xl hover:bg-cyan-400 transition">
+                        發送郵件
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="max-w-5xl mx-auto px-6 py-8 mt-12 border-t border-slate-800 text-center text-sm text-slate-500">
+        <p>Contact: <a href="mailto:austenjuan2@gmail.com" class="text-cyan-400 underline">austenjuan2@gmail.com</a></p>
+        <p class="mt-2 text-xs">&copy; 2026 阮孟杰. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

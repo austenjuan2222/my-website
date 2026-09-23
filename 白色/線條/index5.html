@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阮孟杰 - 個人首頁 | Flat Swiss</title>
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-ZSVL2PNT60');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #ffffff; color: #000000; }
+        .swiss-box { border: 2px solid #000; background: #fff; }
+    </style>
+</head>
+<body class="antialiased font-sans">
+
+    <header class="border-b-2 border-black">
+        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#" class="font-black text-xl tracking-tight">MENG-JIE</a>
+            <nav class="hidden md:flex space-x-8 text-sm font-bold">
+                <a href="#home" class="border-b-2 border-black pb-1">HOME</a>
+                <a href="#news" class="text-neutral-400 hover:text-black">NEWS <span class="text-xs bg-black text-white px-1 ml-1">SOON</span></a>
+                <a href="#tools" class="text-neutral-400 hover:text-black">TOOLS <span class="text-xs bg-black text-white px-1 ml-1">SOON</span></a>
+                <a href="#games" class="text-neutral-400 hover:text-black">GAMES <span class="text-xs bg-black text-white px-1 ml-1">SOON</span></a>
+            </nav>
+            <a href="mailto:austenjuan2@gmail.com" class="text-sm font-bold px-4 py-2 bg-black text-white hover:bg-neutral-800 transition">聯絡我</a>
+        </div>
+    </header>
+
+    <main id="home" class="max-w-5xl mx-auto px-6 py-12 space-y-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="swiss-box p-6 flex flex-col items-center justify-center text-center">
+                <div class="w-36 h-36 border-2 border-black mb-4 overflow-hidden">
+                    <img src="images.jpg" alt="阮孟杰照片" class="w-full h-full object-cover">
+                </div>
+                <h1 class="text-2xl font-black">阮孟杰</h1>
+                <p class="text-sm font-bold text-neutral-600 mt-1">大同大學資工系四年級</p>
+            </div>
+
+            <div class="swiss-box p-8 md:col-span-2 flex flex-col justify-center">
+                <h2 class="text-lg font-black uppercase tracking-wider mb-4 border-b-2 border-black pb-2">Biography / 關於我</h2>
+                <p class="text-neutral-800 font-medium leading-relaxed">
+                    我是阮孟杰，目前就讀於大同大學資訊工程學系四年級（2022年至今）。在學期間，我專注於智慧物聯網專題研究，並積極探索 vibe coding 與新興技術。我抱持著好學且能接受新事物的態度，持續充實自我。在課業與研究之餘，我的興趣涵蓋健身與出國旅遊，熱愛在不同體驗中拓展視野。
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="swiss-box p-6">
+                <h3 class="font-black text-base mb-2">專長領域</h3>
+                <p class="text-neutral-700 text-sm font-medium">智慧物聯網專題研究、vibe coding</p>
+            </div>
+            <div class="swiss-box p-6">
+                <h3 class="font-black text-base mb-2">個人興趣</h3>
+                <p class="text-neutral-700 text-sm font-medium">健身訓練、出國旅遊</p>
+            </div>
+            <div class="swiss-box p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-black text-base mb-2">核心態度</h3>
+                    <p class="text-neutral-700 text-sm font-medium">好學、樂於接受新事物</p>
+                </div>
+                <div class="mt-4">
+                    <a href="mailto:austenjuan2@gmail.com" class="block w-full py-2 px-4 border-2 border-black font-bold text-center hover:bg-black hover:text-white transition">
+                        聯絡信箱
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="max-w-5xl mx-auto px-6 py-8 mt-12 border-t-2 border-black text-center text-sm font-bold">
+        <p>Contact: <a href="mailto:austenjuan2@gmail.com" class="underline">austenjuan2@gmail.com</a></p>
+        <p class="mt-2 text-xs font-normal text-neutral-500">&copy; 2026 阮孟杰. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
