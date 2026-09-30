@@ -27,7 +27,7 @@
             <span>← 回首頁</span>
         </a>
         <div class="text-center">
-            <h1 class="text-base md:text-xl font-black tracking-widest text-cyan-400">極限街頭對決 (追蹤氣功版)</h1>
+            <h1 class="text-base md:text-xl font-black tracking-widest text-cyan-400">極限街頭對決 (強力自動追蹤版)</h1>
         </div>
         <div class="text-right text-xs md:text-sm font-semibold text-cyan-300">
             最高連勝: <span id="bestStreak" class="text-white text-base">0</span> 連勝
@@ -44,7 +44,7 @@
             <p id="overlayDesc" class="text-slate-300 text-sm md:text-base mb-6 max-w-md leading-relaxed">
                 操作說明：<br>
                 移動：<span class="text-cyan-300 font-bold">A / D</span>｜跳躍：<span class="text-cyan-300 font-bold">空白鍵 / ↑</span><br>
-                普攻：<span class="text-amber-400 font-bold">W</span>｜<span class="text-cyan-300 font-bold">追蹤氣功波(Q)</span>｜衝刺斬(E)<br>
+                普攻：<span class="text-amber-400 font-bold">W</span>｜<span class="text-cyan-300 font-bold">強力追蹤氣功(Q)</span>｜衝刺斬(E)<br>
                 防禦護盾：按住 <span class="text-blue-400 font-bold">S</span>（完全免疫傷害）
             </p>
             <button id="startBtn" class="px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-lg rounded-2xl shadow-lg transition">
@@ -223,29 +223,29 @@
         }
 
         class Projectile {
-            constructor(x, y, color, type, owner) {
+            constructor(x, y, vx, vy, color, type, owner) {
                 this.x = x; this.y = y;
-                this.vx = 0; this.vy = 0;
-                this.speed = type === 'E' ? 12 : 8;
+                this.vx = vx; this.vy = vy;
+                this.speed = type === 'E' ? 10 : 7;
                 this.radius = type === 'E' ? 30 : 18;
                 this.color = color; this.type = type;
-                this.owner = owner; // 'player' 或 'ai'
+                this.owner = owner;
                 this.active = true;
             }
             update(target) {
-                // 自動向敵人吸附追蹤計算
+                // 強力追蹤：隨時計算目標中心點並直接引導速度向量轉向
                 const targetCenterX = target.x + target.width / 2;
                 const targetCenterY = target.y + target.height / 2;
                 const dx = targetCenterX - this.x;
                 const dy = targetCenterY - this.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+                const dist = Math.hypot(dx, dy);
 
-                if (dist > 1) {
-                    // 逐步改變速度方向，形成滑順的追蹤吸附效果
-                    const targetVx = (dx / dist) * this.speed;
-                    const targetVy = (dy / dist) * this.speed;
-                    this.vx += (targetVx - this.vx) * 0.15;
-                    this.vy += (targetVy - this.vy) * 0.15;
+                if (dist > 2) {
+                    const dirX = dx / dist;
+                    const dirY = dy / dist;
+                    // 以靈敏的轉向系數直接吸附過去
+                    this.vx += (dirX * this.speed - this.vx) * 0.25;
+                    this.vy += (dirY * this.speed - this.vy) * 0.25;
                 }
 
                 this.x += this.vx;
@@ -261,7 +261,7 @@
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.shadowColor = this.color;
-                ctx.shadowBlur = 20;
+                ctx.shadowBlur = 25;
                 ctx.fill();
                 ctx.restore();
             }
@@ -291,10 +291,8 @@
             player.actionState = 'attack';
             player.actionFrame = 15;
             playSound('skill');
-            // 建立具備自動追蹤能力的氣功波
-            const p = new Projectile(player.x + 30, player.y + 30, '#22d3ee', 'Q', 'player');
-            p.vx = 8; // 初始向右發射
-            projectiles.push(p);
+            // 發射時賦予初始速度，隨後由 update 自動強效追蹤
+            projectiles.push(new Projectile(player.x + 30, player.y + 30, 6, -2, '#22d3ee', 'Q', 'player'));
         }
 
         function playerAttackE() {
@@ -304,9 +302,7 @@
             player.actionState = 'attack';
             player.actionFrame = 20;
             playSound('skill');
-            const p = new Projectile(player.x + 30, player.y + 20, '#e879f9', 'E', 'player');
-            p.vx = 10;
-            projectiles.push(p);
+            projectiles.push(new Projectile(player.x + 30, player.y + 20, 8, 0, '#e879f9', 'E', 'player'));
         }
 
         function applyDamage(target, dmg) {
@@ -348,9 +344,7 @@
                 ai.energy -= 30;
                 ai.attackCooldown = 45;
                 playSound('skill');
-                const p = new Projectile(ai.x, ai.y + 30, '#f472b6', 'Q', 'ai');
-                p.vx = -8;
-                projectiles.push(p);
+                projectiles.push(new Projectile(ai.x, ai.y + 30, -6, -2, '#f472b6', 'Q', 'ai'));
             }
         }
 
@@ -371,7 +365,7 @@
             player.update(ai);
             ai.update(player);
 
-            // 更新投射物（傳入各自的攻擊目標以進行自動吸附追蹤）
+            // 更新所有投射物，並自動吸附追蹤目標
             projectiles.forEach(p => {
                 const target = p.owner === 'player' ? ai : player;
                 p.update(target);
@@ -385,7 +379,7 @@
                 const targetCenterY = target.y + target.height / 2;
                 const distToTarget = Math.hypot(p.x - targetCenterX, p.y - targetCenterY);
 
-                if (distToTarget < p.radius + 35) {
+                if (distToTarget < p.radius + 30) {
                     applyDamage(target, p.type === 'E' ? 30 : 15);
                     p.active = false;
                 }
