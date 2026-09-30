@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極限街頭對決：Cyber Fighter - 小遊戲</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            min-height: 100vh;
+            touch-action: none;
+            user-select: none;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body class="text-white font-sans antialiased flex flex-col items-center justify-between min-h-screen p-2 md:p-4 overflow-hidden">
+
+    <!-- 頂部導覽列與分數面板 -->
+    <header class="w-full max-w-5xl flex items-center justify-between px-4 py-2 glass-panel rounded-2xl shadow-lg z-20">
+        <a href="index.html" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold text-sm rounded-xl transition flex items-center space-x-1 shadow">
+            <span>← 回首頁</span>
+        </a>
+        <div class="text-center">
+            <h1 class="text-base md:text-xl font-black tracking-widest bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">極限街頭對決</h1>
+        </div>
+        <div class="text-right text-xs md:text-sm font-semibold text-cyan-300">
+            最高連勝: <span id="bestStreak" class="text-white text-base">0</span> 連勝
+        </div>
+    </header>
+
+    <!-- 遊戲主畫面 Canvas 容器 -->
+    <main class="relative w-full max-w-5xl aspect-[16/9] max-h-[55vh] glass-panel rounded-3xl overflow-hidden shadow-2xl border border-cyan-500/30 flex items-center justify-center my-2">
+        <canvas id="gameCanvas" class="w-full h-full block cursor-default"></canvas>
+
+        <!-- 遊戲開始 / 結束覆蓋層 -->
+        <div id="overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-30 transition-all duration-300">
+            <h2 id="overlayTitle" class="text-3xl md:text-5xl font-black mb-3 tracking-wider bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">CYBER FIGHTER</h2>
+            <p id="overlayDesc" class="text-slate-300 text-sm md:text-base mb-6 max-w-md leading-relaxed">
+                操作說明：<br>
+                移動：<span class="text-cyan-300 font-bold">A / D</span>｜跳躍：<span class="text-cyan-300 font-bold">空白鍵 / ↑</span><br>
+                普攻：<span class="text-cyan-300 font-bold">W</span>｜氣功波(Q)：<span class="text-cyan-300 font-bold">Q</span>｜衝刺斬(E)：<span class="text-cyan-300 font-bold">E</span><br>
+                防禦護盾：按住 <span class="text-cyan-300 font-bold">S</span>（完全免疫傷害）
+            </p>
+            <button id="startBtn" class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-lg rounded-2xl shadow-lg transform hover:scale-105 active:scale-95 transition">
+                進入對決
+            </button>
+        </div>
+    </main>
+
+    <!-- 手機專屬虛擬控制器 (RWD 觸控面板) -->
+    <footer class="w-full max-w-5xl grid grid-cols-2 gap-3 px-2 pb-2 z-20">
+        <!-- 左側：移動與防禦 -->
+        <div class="flex items-center space-x-2">
+            <button id="btnLeft" class="flex-1 py-3 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded-2xl font-bold text-sm active:bg-cyan-600 transition shadow">◀ 移動左</button>
+            <button id="btnRight" class="flex-1 py-3 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded-2xl font-bold text-sm active:bg-cyan-600 transition shadow">移動右 ▶</button>
+            <button id="btnShield" class="px-4 py-3 bg-blue-900/80 hover:bg-blue-800 border border-blue-500 rounded-2xl font-bold text-sm active:bg-blue-600 transition shadow text-cyan-200">🛡️ 防禦</button>
+        </div>
+        <!-- 右側：跳躍與攻擊技能 -->
+        <div class="grid grid-cols-4 gap-1.5">
+            <button id="btnJump" class="bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded-2xl font-bold text-xs active:bg-cyan-600 transition shadow">跳躍</button>
+            <button id="btnW" class="bg-amber-600/80 hover:bg-amber-500 border border-amber-400 rounded-2xl font-black text-sm active:bg-amber-400 transition shadow">W 普</button>
+            <button id="btnQ" class="bg-cyan-600/80 hover:bg-cyan-500 border border-cyan-400 rounded-2xl font-black text-sm active:bg-cyan-400 transition shadow">Q 氣</button>
+            <button id="btnE" class="bg-fuchsia-600/80 hover:bg-fuchsia-500 border border-fuchsia-400 rounded-2xl font-black text-sm active:bg-fuchsia-400 transition shadow">E 斬</button>
+        </div>
+    </footer>
+
+    <!-- 遊戲完整邏輯 Script -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 自動調整內部畫布尺寸
+        function resizeCanvas() {
+            canvas.width = 1280;
+            canvas.height = 720;
+        }
+        resizeCanvas();
+
+        // 音效合成器 (Web Audio API)
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'hit') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'skill') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.25);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'shield') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.setValueAtTime(800, now + 0.1);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                }
+            } catch(e) {}
+        }
+
+        // 遊戲狀態變數
+        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let bestStreak = parseInt(localStorage.getItem('cyber_fighter_streak') || '0');
+        document.getElementById('bestStreak').innerText = bestStreak;
+
+        const keys = {};
+        const touchState = { left: false, right: false, jump: false, w: false, q: false, e: false, shield: false };
+
+        // 監聽鍵盤事件
+        window.addEventListener('keydown', e => {
+            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                e.preventDefault();
+            }
+            keys[e.code] = true;
+            // 瞬間觸發按鍵
+            if (gameState === 'PLAYING') {
+                if (e.code === 'KeyW') playerAttackW();
+                if (e.code === 'KeyQ') playerAttackQ();
+                if (e.code === 'KeyE') playerAttackE();
+            }
+        });
+        window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+        // 綁定虛擬按鈕事件
+        function bindTouch(id, stateKey) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('touchstart', e => { e.preventDefault(); touchState[stateKey] = true; if(gameState==='PLAYING' && (stateKey==='w'||stateKey==='q'||stateKey==='e')) triggerTouchSkill(stateKey); });
+            el.addEventListener('touchend', e => { e.preventDefault(); touchState[stateKey] = false; });
+            el.addEventListener('mousedown', e => { touchState[stateKey] = true; if(gameState==='PLAYING' && (stateKey==='w'||stateKey==='q'||stateKey==='e')) triggerTouchSkill(stateKey); });
+            el.addEventListener('mouseup', e => { touchState[stateKey] = false; });
+            el.addEventListener('mouseleave', e => { touchState[stateKey] = false; });
+        }
+        bindTouch('btnLeft', 'left');
+        bindTouch('btnRight', 'right');
+        bindTouch('btnJump', 'jump');
+        bindTouch('btnShield', 'shield');
+        bindTouch('btnW', 'w');
+        bindTouch('btnQ', 'q');
+        bindTouch('btnE', 'e');
+
+        function triggerTouchSkill(key) {
+            if (key === 'w') playerAttackW();
+            if (key === 'q') playerAttackQ();
+            if (key === 'e') playerAttackE();
+        }
+
+        // 角色類別
+        class Fighter {
+            constructor(x, y, color, isAI) {
+                this.x = x;
+                this.y = y;
+                this.width = 60;
+                this.height = 110;
+                this.vx = 0;
+                this.vy = 0;
+                this.color = color;
+                this.isAI = isAI;
+                this.hp = 100;
+                this.maxHp = 100;
+                this.energy = 0;
+                this.maxEnergy = 100;
+                this.isShielding = false;
+                this.facing = isAI ? -1 : 1;
+                this.attackCooldown = 0;
+                this.animTimer = 0;
+                this.actionState = 'idle'; // idle, attack, hit
+                this.actionFrame = 0;
+            }
+
+            update(opponent) {
+                // 物理重力
+                this.vy += 0.7;
+                this.y += this.vy;
+                if (this.y + this.height > 620) {
+                    this.y = 620 - this.height;
+                    this.vy = 0;
+                }
+
+                this.x += this.vx;
+                this.vx *= 0.8; // 摩擦力
+
+                // 邊界限制
+                if (this.x < 50) this.x = 50;
+                if (this.x > canvas.width - 50 - this.width) this.x = canvas.width - 50 - this.width;
+
+                if (this.attackCooldown > 0) this.attackCooldown--;
+                if (this.energy < this.maxEnergy && Math.random() < 0.1) {
+                    this.energy = Math.min(this.maxEnergy, this.energy + 0.5);
+                }
+
+                // 面對敵人方向
+                this.facing = this.x < opponent.x ? 1 : -1;
+                if (this.actionFrame > 0) this.actionFrame--;
+                else this.actionState = 'idle';
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+                if (this.facing === -1) ctx.scale(-1, 1);
+
+                // 防禦護盾光圈
+                if (this.isShielding) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 75, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+                    ctx.fill();
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.stroke();
+                }
+
+                // 身體本體（非像素向量漸層）
+                // 雙腿
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-20, 20, 14, 35);
+                ctx.fillRect(6, 20, 14, 35);
+
+                // 軀幹
+                const bodyGrad = ctx.createLinearGradient(-25, -25, 25, 25);
+                bodyGrad.addColorStop(0, this.color);
+                bodyGrad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.roundRect(-25, -25, 50, 50, 10);
+                ctx.fill();
+
+                // 頭部
+                ctx.beginPath();
+                ctx.arc(0, -42, 18, 0, Math.PI * 2);
+                ctx.fillStyle = '#f8fafc';
+                ctx.fill();
+
+                // 眼睛/頭帶裝飾
+                ctx.fillStyle = this.color;
+                ctx.fillRect(2, -48, 14, 6);
+
+                // 手臂與攻擊動作
+                ctx.fillStyle = this.color;
+                if (this.actionState === 'attack') {
+                    // 出拳揮擊延伸
+                    ctx.fillRect(15, -15, 45, 14);
+                } else {
+                    ctx.fillRect(-32, -15, 14, 30);
+                    ctx.fillRect(18, -15, 14, 30);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // 專屬技能 / 投射物類別
+        class Projectile {
+            constructor(x, y, vx, color, type) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.radius = type === 'E' ? 30 : 18;
+                this.color = color;
+                this.type = type;
+                this.active = true;
+            }
+            update() {
+                this.x += this.vx;
+                if (this.x < 0 || this.x > canvas.width) this.active = false;
+            }
+            draw() {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 20;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        let player, ai, projectiles, particles;
+
+        function initGame() {
+            player = new Fighter(300, 510, '#06b6d4', false); // 玩家 (青色)
+            ai = new Fighter(920, 510, '#ec4899', true);       // 電腦 (粉紅)
+            projectiles = [];
+            particles = [];
+        }
+
+        // 玩家攻擊指令
+        function playerDataReset() {}
+        function playerAttackW() {
+            if (gameState !== 'PLAYING' || player.attackCooldown > 0) return;
+            player.attackCooldown = 15;
+            player.actionState = 'attack';
+            player.actionFrame = 12;
+            playSound('hit');
+
+            // 近身判定
+            const dist = Math.abs((player.x + player.width/2) - (ai.x + ai.width/2));
+            if (dist < 90 && Math.abs(player.y - ai.y) < 50) {
+                applyDamage(ai, 10);
+            }
+        }
+
+        function playerAttackQ() {
+            if (gameState !== 'PLAYING' || player.attackCooldown > 0) return;
+            player.attackCooldown = 25;
+            player.actionState = 'attack';
+            player.actionFrame = 15;
+            playSound('skill');
+            projectiles.push(new Projectile(player.x + 40, player.y + 30, 14, '#22d3ee', 'Q'));
+        }
+
+        function playerAttackE() {
+            if (gameState !== 'PLAYING' || player.energy < 40 || player.attackCooldown > 0) return;
+            player.energy -= 40;
+            player.attackCooldown = 40;
+            player.actionState = 'attack';
+            player.actionFrame = 20;
+            playSound('skill');
+            projectiles.push(new Projectile(player.x + 40, player.y + 20, 20, '#e879f9', 'E'));
+        }
+
+        function applyDamage(target, dmg) {
+            if (target.isShielding) {
+                playSound('shield');
+                createParticles(target.x + 30, target.y + 50, '#38bdf8', 10);
+                return; // 完全抵擋傷害
+            }
+            target.hp -= dmg;
+            playSound('hit');
+            createParticles(target.x + 30, target.y + 50, target.color, 15);
+            if (target.hp <= 0) {
+                target.hp = 0;
+                endGame(target === ai ? 'VICTORY' : 'DEFEAT');
+            }
+        }
+
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    radius: Math.random() * 5 + 2,
+                    color: color,
+                    life: 30
+                });
+            }
+        }
+
+        // 電腦 AI 邏輯
+        function updateAI() {
+            const dist = (player.x + player.width/2) - (ai.x + ai.width/2);
+            const absDist = Math.abs(dist);
+
+            ai.isShielding = false;
+
+            // 危機防禦
+            if (Math.random() < 0.03 && absDist < 120) {
+                ai.isShielding = true;
+                playSound('shield');
+                return;
+            }
+
+            // 移動追擊或拉開距離
+            if (absDist > 100) {
+                ai.vx = dist > 0 ? 3.5 : -3.5;
+            } else if (absDist < 70) {
+                ai.vx = dist > 0 ? -2.5 : 2.5;
+                if (Math.random() < 0.15 && ai.attackCooldown === 0) {
+                    ai.attackCooldown = 25;
+                    ai.actionState = 'attack';
+                    ai.actionFrame = 12;
+                    playSound('hit');
+                    if (absDist < 90) applyDamage(player, 8);
+                }
+            }
+
+            // AI 隨機施放技能
+            if (Math.random() < 0.02 && ai.attackCooldown === 0 && ai.energy >= 30) {
+                ai.energy -= 30;
+                ai.attackCooldown = 45;
+                playSound('skill');
+                projectiles.push(new Projectile(ai.x, ai.y + 30, -12, '#f472b6', 'Q'));
+            }
+        }
+
+        // 主遊戲迴圈
+        function gameLoop() {
+            if (gameState !== 'PLAYING') return;
+
+            // --- 玩家操作處理 ---
+            player.isShielding = keys['KeyS'] || touchState.shield;
+            if (!player.isShielding) {
+                if (keys['KeyA'] || touchState.left) player.vx = -6;
+                if (keys['KeyD'] || touchState.right) player.vx = 6;
+                if ((keys['Space'] || keys['ArrowUp'] || touchState.jump) && player.y >= 510) {
+                    player.vy = -16;
+                    touchState.jump = false;
+                }
+            }
+
+            // --- 更新 AI ---
+            updateAI();
+
+            // 更新角色
+            player.update(ai);
+            ai.update(player);
+
+            // 更新投射物
+            projectiles.forEach(p => p.update());
+            projectiles = projectiles.filter(p => p.active);
+
+            // 碰撞檢測 (投射物打中對手)
+            projectiles.forEach(p => {
+                // 玩家發出的打 AI
+                if (p.vx > 0 && p.x >= ai.x && p.x <= ai.x + ai.width && p.y >= ai.y && p.y <= ai.y + ai.height) {
+                    applyDamage(ai, p.type === 'E' ? 30 : 15);
+                    p.active = false;
+                }
+                // AI 發出的打玩家
+                if (p.vx < 0 && p.x >= player.x && p.x <= player.x + player.width && p.y >= player.y && p.y <= player.y + player.height) {
+                    applyDamage(player, 15);
+                    p.active = false;
+                }
+            });
+
+            // 更新粒子
+            particles.forEach(pt => {
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.life--;
+            });
+            particles = particles.filter(pt => pt.life > 0);
+
+            // --- 繪製畫面 ---
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 背景網格線與地板
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < canvas.width; i += 80) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+            // 地板
+            const floorGrad = ctx.createLinearGradient(0, 620, 0, 720);
+            floorGrad.addColorStop(0, '#0f172a');
+            floorGrad.addColorStop(1, '#020617');
+            ctx.fillStyle = floorGrad;
+            ctx.fillRect(0, 620, canvas.width, 100);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(0, 620); ctx.lineTo(canvas.width, 620); ctx.stroke();
+
+            // 繪製角色與物件
+            player.draw();
+            ai.draw();
+            projectiles.forEach(p => p.draw());
+            particles.forEach(pt => {
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 繪製 UI 血條
+            drawHUD();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawHUD() {
+            // 玩家血條 (左側)
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+            ctx.fillRect(50, 30, 350, 30);
+            ctx.fillStyle = '#06b6d4';
+            ctx.fillRect(50, 30, 350 * (player.hp / player.maxHp), 30);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(50, 30, 350, 30);
+
+            // 玩家能量條
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+            ctx.fillRect(50, 68, 250, 12);
+            ctx.fillStyle = '#e879f9';
+            ctx.fillRect(50, 68, 250 * (player.energy / player.maxEnergy), 12);
+            ctx.strokeRect(50, 68, 250, 12);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillText('PLAYER (RYU)', 55, 22);
+
+            // 電腦血條 (右側)
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+            ctx.fillRect(canvas.width - 400, 30, 350, 30);
+            ctx.fillStyle = '#ec4899';
+            const aiHpWidth = 350 * (ai.hp / ai.maxHp);
+            ctx.fillRect(canvas.width - 50 - aiHpWidth, 30, aiHpWidth, 30);
+            ctx.strokeRect(canvas.width - 400, 30, 350, 30);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('CPU (KEN)', canvas.width - 390, 22);
+        }
+
+        function endGame(result) {
+            gameState = 'GAMEOVER';
+            const overlay = document.getElementById('overlay');
+            const title = document.getElementById('overlayTitle');
+            const desc = document.getElementById('overlayDesc');
+            const startBtn = document.getElementById('startBtn');
+
+            overlay.classList.remove('hidden');
+            overlay.style.display = 'flex';
+
+            if (result === 'VICTORY') {
+                title.innerText = '勝利！ VICTORY';
+                bestStreak++;
+                localStorage.setItem('cyber_fighter_streak', bestStreak);
+                document.getElementById('bestStreak').innerText = bestStreak;
+                desc.innerHTML = `恭喜擊敗對手！<br>目前連勝紀錄：<span class="text-cyan-400 font-bold">${bestStreak}</span> 連勝`;
+            } else {
+                title.innerText = '敗北... DEFEAT';
+                desc.innerText = '再接再厲！調整戰術與防禦時機再來挑戰。';
+            }
+            startBtn.innerText = '再次挑戰';
+        }
+
+        // 開始遊戲按鈕事件
+        document.getElementById('startBtn').addEventListener('click', () => {
+            initAudio();
+            initGame();
+            gameState = 'PLAYING';
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'none';
+            requestAnimationFrame(gameLoop);
+        });
+    </script>
+</body>
+</html>
