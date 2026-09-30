@@ -38,7 +38,7 @@
                 <a href="#home" class="text-sky-900 hover:text-sky-600 transition">Home</a>
                 <a href="#news" class="text-slate-500 hover:text-slate-800 transition">News <span class="text-xs text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-full ml-1">Coming soon</span></a>
                 <a href="#tools" class="text-slate-500 hover:text-slate-800 transition">Tools <span class="text-xs text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-full ml-1">Coming soon</span></a>
-                <a href="#games" class="text-slate-500 hover:text-slate-800 transition">Games <span class="text-xs text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-full ml-1">Coming soon</span></a>
+                <a href="game.html" class="text-sky-600 hover:text-sky-800 transition font-bold">Games 🎮</a>
             </nav>
             <a href="mailto:austenjuan2@gmail.com" class="text-sm font-medium px-4 py-2 rounded-full glass-card hover:bg-white/40 transition">聯絡我</a>
         </div>
@@ -52,19 +52,29 @@
             
             <!-- 個人照片卡片 -->
             <div class="glass-card rounded-3xl p-6 flex flex-col items-center justify-center text-center md:col-span-1">
-                <div class="w-36 h-36 rounded-2xl overflow-hidden shadow-lg mb-4 border border-white/50">
-                    <img src="images.jpg" alt="阮孟杰照片" class="w-full h-full object-cover">
+                <div class="w-36 h-36 rounded-full md:rounded-2xl overflow-hidden shadow-lg mb-4 border-2 border-white/80">
+                    <img src="images/me.jpg" alt="阮孟杰" class="w-full h-full object-cover">
                 </div>
                 <h1 class="text-2xl font-bold text-slate-900">阮孟杰</h1>
                 <p class="text-sm text-sky-800 font-medium mt-1">大同大學資工系四年級</p>
             </div>
 
             <!-- About / Bio 區塊 -->
-            <div class="glass-card rounded-3xl p-8 md:col-span-2 flex flex-col justify-center">
-                <h2 class="text-xl font-bold mb-4 text-slate-900">關於我</h2>
-                <p class="text-slate-700 leading-relaxed text-lg">
-                    我是阮孟杰，目前就讀於大同大學資訊工程學系四年級（2022年至今）。在學期間，我專注於智慧物聯網專題研究，並積極探索 vibe coding 與新興技術。我抱持著好學且能接受新事物的態度，持續充實自我。在課業與研究之餘，我的興趣涵蓋健身與出國旅遊，熱愛在不同體驗中拓展視野。
-                </p>
+            <div class="glass-card rounded-3xl p-8 md:col-span-2 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-xl font-bold mb-4 text-slate-900">關於我</h2>
+                    <p class="text-slate-700 leading-relaxed text-lg">
+                        我是阮孟杰，目前就讀於大同大學資訊工程學系四年級（2022年至今）。在學期間，我專注於智慧物聯網專題研究，並積極探索 vibe coding 與新興技術。我抱持著好學且能接受新事物的態度，持續充實自我。在課業與研究之餘，我的興趣涵蓋健身與出國旅遊，熱愛在不同體驗中拓展視野。
+                    </p>
+                </div>
+                <!-- 新增：明顯的小遊戲按鈕 -->
+                <div class="mt-6 pt-4 border-t border-white/25 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <span class="text-sm text-slate-700 font-medium">🎮 想放鬆一下嗎？來挑戰看看我製作的街機小遊戲！</span>
+                    <a href="game.html" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold text-center rounded-2xl shadow-lg hover:from-sky-500 hover:to-indigo-500 transform hover:-translate-y-0.5 transition duration-200 flex items-center justify-center space-x-2">
+                        <span>玩我的小遊戲</span>
+                        <span>🚀</span>
+                    </a>
+                </div>
             </div>
         </div>
 
