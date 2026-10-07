@@ -136,6 +136,7 @@
 
             fetch(API_URL, {
                 method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 // 因為不是 FormData，確保以字串送出 json
                 body: JSON.stringify({ name: name, score: bestStreak }) 
             })
