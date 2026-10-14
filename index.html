@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>阮孟杰 - 個人首頁 | Glassmorphism</title>
+    <title>阮孟杰 - 個人首頁 | Portfolio</title>
     <!-- Google Analytics (GA4) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
     <script>
@@ -15,93 +15,177 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* 增強毛玻璃質感 */
         .glass-card {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
         }
-        body {
-            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-            min-height: 100vh;
+        .glass-card:hover {
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+        }
+        /* 背景光斑呼吸動畫 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+        .animate-float-slow {
+            animation: float 8s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+            animation: float 10s ease-in-out 2s infinite;
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased font-sans">
+<body class="text-slate-800 antialiased font-sans bg-slate-100 min-h-screen relative overflow-x-hidden">
+
+    <!-- 1. 背景強化：動態光斑視覺元素 -->
+    <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <!-- 主漸層背景 -->
+        <div class="absolute inset-0 bg-gradient-to-br from-sky-200 via-indigo-100 to-purple-200"></div>
+        <!-- 動態光斑 1 (左上) -->
+        <div class="absolute -top-20 -left-20 w-96 h-96 bg-blue-400/40 rounded-full blur-3xl animate-float-slow"></div>
+        <!-- 動態光斑 2 (右中) -->
+        <div class="absolute top-1/3 -right-20 w-80 h-80 bg-purple-400/30 rounded-full blur-3xl animate-float-delayed"></div>
+        <!-- 動態光斑 3 (左下) -->
+        <div class="absolute bottom-10 left-10 w-96 h-96 bg-indigo-300/40 rounded-full blur-3xl animate-float-slow"></div>
+    </div>
 
     <!-- 導覽列 -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/30 border-b border-white/20">
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/40 border-b border-white/30 transition-all">
         <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="#" class="font-bold text-lg tracking-wider text-slate-900">Meng-Jie</a>
-            <nav class="hidden md:flex space-x-8 text-sm font-medium">
-                <a href="#home" class="text-sky-900 hover:text-sky-600 transition">Home</a>
-                <a href="#news" class="text-slate-500 hover:text-slate-800 transition">News <span class="text-xs text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-full ml-1">Coming soon</span></a>
-                <a href="#tools" class="text-slate-500 hover:text-slate-800 transition">Tools <span class="text-xs text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-full ml-1">Coming soon</span></a>
-                <a href="game.html" class="text-sky-600 hover:text-sky-800 transition font-bold">Games 🎮</a>
+            <a href="#" class="font-extrabold text-xl tracking-wider text-slate-900 hover:text-sky-600 transition">Meng-Jie</a>
+            <nav class="hidden md:flex space-x-8 text-sm font-semibold">
+                <a href="#home" class="text-sky-900 hover:text-sky-600 transition">關於我</a>
+                <a href="#skills" class="text-slate-600 hover:text-sky-600 transition">專業技能</a>
+                <a href="#projects" class="text-slate-600 hover:text-sky-600 transition">研究與專案</a>
+                <a href="game.html" class="text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 font-bold">
+                    <span>Games</span> <span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">🎮 試玩</span>
+                </a>
             </nav>
-            <a href="mailto:austenjuan2@gmail.com" class="text-sm font-medium px-4 py-2 rounded-full glass-card hover:bg-white/40 transition">聯絡我</a>
+            <a href="mailto:austenjuan2@gmail.com" class="text-sm font-medium px-5 py-2 rounded-full glass-card hover:bg-white/60 transition shadow-sm">聯絡我</a>
         </div>
     </header>
 
-    <!-- 主要內容 -->
-    <main id="home" class="max-w-5xl mx-auto px-6 py-12 space-y-8">
+    <!-- 主要內容區塊 -->
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
         
         <!-- Hero + About 區塊 (Bento Grid) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section id="home" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             <!-- 個人照片卡片 -->
-            <div class="glass-card rounded-3xl p-6 flex flex-col items-center justify-center text-center md:col-span-1">
-                <div class="w-36 h-36 rounded-2xl overflow-hidden shadow-lg mb-4 border border-white/50">
+            <div class="glass-card rounded-3xl p-6 flex flex-col items-center justify-center text-center md:col-span-1 transition duration-300">
+                <div class="w-36 h-36 rounded-2xl overflow-hidden shadow-xl mb-4 border-2 border-white/80 transform hover:scale-105 transition duration-300">
                     <img src="images.jpg" alt="阮孟杰照片" class="w-full h-full object-cover">
                 </div>
                 <h1 class="text-2xl font-bold text-slate-900">阮孟杰</h1>
-                <p class="text-sm text-sky-800 font-medium mt-1">大同大學資工系四年級</p>
+                <p class="text-sm text-sky-800 font-semibold mt-1">大同大學資工系 四年級</p>
+                <div class="mt-4 flex gap-2 flex-wrap justify-center">
+                    <span class="text-xs bg-white/60 border border-white/40 px-2.5 py-1 rounded-full text-slate-700">IoT 研究</span>
+                    <span class="text-xs bg-white/60 border border-white/40 px-2.5 py-1 rounded-full text-slate-700">Vibe Coding</span>
+                </div>
             </div>
 
             <!-- About / Bio 區塊 -->
-            <div class="glass-card rounded-3xl p-8 md:col-span-2 flex flex-col justify-center">
-                <h2 class="text-xl font-bold mb-4 text-slate-900">關於我</h2>
-                <p class="text-slate-700 leading-relaxed text-lg">
-                    我是阮孟杰，目前就讀於大同大學資訊工程學系四年級（2022年至今）。在學期間，我專注於智慧物聯網專題研究，並積極探索 vibe coding 與新興技術。我抱持著好學且能接受新事物的態度，持續充實自我。在課業與研究之餘，我的興趣涵蓋健身與出國旅遊，熱愛在不同體驗中拓展視野。
-                </p>
-                <!-- 小遊戲按鈕 -->
-                <div class="mt-6 pt-4 border-t border-white/20">
-                    <a href="game.html" class="inline-flex items-center justify-center space-x-2 w-full py-3 px-6 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold rounded-2xl shadow-md hover:from-sky-500 hover:to-indigo-500 transition">
-                        <span>🎮 玩我的小遊戲</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- 專長與興趣區塊 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass-card rounded-3xl p-6">
-                <h3 class="font-bold text-lg mb-2 text-slate-900">💻 專業領域</h3>
-                <p class="text-slate-600 text-sm">智慧物聯網專題研究、vibe coding、資訊工程技術</p>
-            </div>
-            <div class="glass-card rounded-3xl p-6">
-                <h3 class="font-bold text-lg mb-2 text-slate-900">💪 個人興趣</h3>
-                <p class="text-slate-600 text-sm">健身訓練、出國旅遊、拓展宏觀視野</p>
-            </div>
-            <div class="glass-card rounded-3xl p-6 flex flex-col justify-between">
+            <div class="glass-card rounded-3xl p-8 md:col-span-2 flex flex-col justify-between transition duration-300">
                 <div>
-                    <h3 class="font-bold text-lg mb-2 text-slate-900">✨ 核心態度</h3>
-                    <p class="text-slate-600 text-sm">好學、樂於接受新事物、持續充實自我</p>
+                    <h2 class="text-xl font-bold mb-3 text-slate-900 flex items-center gap-2">
+                        <span>👋</span> 關於我 (About Me)
+                    </h2>
+                    <p class="text-slate-700 leading-relaxed">
+                        我是阮孟杰，目前就讀於 **大同大學資訊工程學系四年級（2022年至今）**。在學期間專注於 **智慧物聯網 (AIoT)** 相關專題研究，並積極探索 **Vibe Coding** 與現代化開發技術。
+                    </p>
+                    <p class="text-slate-700 leading-relaxed mt-3">
+                        我抱持著好學且樂於擁抱新科技的态度，能快速適應軟硬體開發整合與團隊協作。在課業之餘，我熱衷於 **健身訓練** 與 **出國旅遊**，透過多元的體驗鍛鍊意志並拓展國際視野。
+                    </p>
                 </div>
-                <div class="mt-4">
-                    <a href="mailto:austenjuan2@gmail.com" class="inline-block w-full py-2.5 px-4 bg-sky-600 text-white font-medium text-center rounded-xl shadow-md hover:bg-sky-500 transition">
-                        立即聯絡我
+                
+                <div class="mt-6 pt-4 border-t border-white/30 flex flex-col sm:flex-row gap-3">
+                    <a href="game.html" class="flex-1 inline-flex items-center justify-center space-x-2 py-3 px-6 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-md transition transform hover:-translate-y-0.5">
+                        <span>🎮 體驗我的小遊戲作品</span>
                     </a>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <!-- 2. 新增：專業技能區塊 (減少留白) -->
+        <section id="skills" class="space-y-4">
+            <h2 class="text-xl font-bold text-slate-900 px-2">💡 專業技能與工具 (Skills)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card rounded-3xl p-6">
+                    <h3 class="font-bold text-slate-900 text-base mb-3 flex items-center gap-2">
+                        <span>🛠️</span> 程式開發與技術
+                    </h3>
+                    <ul class="space-y-2 text-sm text-slate-700">
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>C / C++ 程式設計</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>Python 基礎與應用</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>HTML5 / CSS3 / JavaScript</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>Vibe Coding & AI 輔助開發</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-6">
+                    <h3 class="font-bold text-slate-900 text-base mb-3 flex items-center gap-2">
+                        <span>📡</span> 智慧物聯網 (IoT)
+                    </h3>
+                    <ul class="space-y-2 text-sm text-slate-700">
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>感測器整合與數據擷取</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>微控制器開發 (Arduino / ESP32)</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>基本網路通訊協定應用</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card rounded-3xl p-6">
+                    <h3 class="font-bold text-slate-900 text-base mb-3 flex items-center gap-2">
+                        <span>🌟</span> 個人特質與興趣
+                    </h3>
+                    <ul class="space-y-2 text-sm text-slate-700">
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>自我驅動、持續充實新知</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>重量訓練與健康管理</li>
+                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>自助旅遊、跨文化體驗</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 新增：專案與研究經歷 (減少留白) -->
+        <section id="projects" class="space-y-4">
+            <h2 class="text-xl font-bold text-slate-900 px-2">🚀 研究專案與經歷 (Projects & Research)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 專案 1 -->
+                <div class="glass-card rounded-3xl p-6 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-sky-100 text-sky-800 rounded-full">畢業專題</span>
+                        <span class="text-xs text-slate-500">2024 - Present</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">智慧物聯網 (AIoT) 應用研究</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        結合物聯網硬體裝置與數據分析，針對特定生活情境設計智慧化自動感測與遠端控制系統，提升生活便利性與能源使用效率。
+                    </p>
+                </div>
+
+                <!-- 專案 2 -->
+                <div class="glass-card rounded-3xl p-6 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-full">網頁與遊戲</span>
+                        <span class="text-xs text-slate-500">2026</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Glassmorphism 個人網頁與小遊戲整合</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        運用 Tailwind CSS 與 Glassmorphism 設計風格建構個人響應式網站，並整合 HTML5 小遊戲，展現前端介面設計與互動邏輯能力。
+                    </p>
+                </div>
+            </div>
+        </section>
 
     </main>
 
-    <!-- 頁尾聯絡資訊 -->
-    <footer class="max-w-5xl mx-auto px-6 py-8 mt-12 border-t border-white/20 text-center text-sm text-slate-600">
-        <p>Contact: <a href="mailto:austenjuan2@gmail.com" class="underline hover:text-slate-900">austenjuan2@gmail.com</a></p>
+    <!-- 頁尾 -->
+    <footer class="max-w-5xl mx-auto px-6 py-8 mt-12 border-t border-white/30 text-center text-sm text-slate-600">
+        <p>Let's connect: <a href="mailto:austenjuan2@gmail.com" class="font-semibold underline hover:text-sky-600 transition">austenjuan2@gmail.com</a></p>
         <p class="mt-2 text-xs text-slate-500">&copy; 2026 阮孟杰 (Meng-Jie). All rights reserved.</p>
     </footer>
 
