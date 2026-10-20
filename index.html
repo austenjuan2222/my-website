@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hant" class="scroll-smooth">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,180 +14,659 @@
     </script>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 字體：Inter + Noto Sans TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Three.js（蟲洞背景） -->
+    <script type="importmap">
+    { "imports": {
+      "three": "https://unpkg.com/three@0.143.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.143.0/examples/jsm/"
+    }}
+    </script>
     <style>
-        /* 增強毛玻璃質感 */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.35);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+        /* 設計：getlayers「Ascend」版面 + 「Tunnel」蟲洞背景 */
+        :root{
+          --bg:#04060f; --bg-2:#060a18; --ink:#f3f6ff; --muted:#9aa6c4; --muted-2:#6b7796;
+          --line:rgba(150,175,230,.12); --line-strong:rgba(150,175,230,.22);
+          --accent:#5df0a8; --accent-2:#2fd38a; --accent-ink:#032018;
+          --glass:rgba(12,18,38,.55); --glass-2:rgba(16,24,48,.65);
+          --radius:18px; --radius-lg:26px; --maxw:1180px;
+          --shadow:0 30px 80px -30px rgba(0,0,0,.75);
+          --font:'Inter','Noto Sans TC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
         }
-        .glass-card:hover {
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+        *{box-sizing:border-box;margin:0;padding:0}
+        html{scroll-behavior:smooth}
+        body{font-family:var(--font);color:var(--ink);background:#0a0524;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+        a{color:inherit;text-decoration:none}
+        html.lenis,html.lenis body{height:auto}
+        .lenis.lenis-smooth{scroll-behavior:auto !important}
+        .lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+        .lenis.lenis-stopped{overflow:hidden}
+        [data-reveal]{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.22,.7,.2,1),transform .7s cubic-bezier(.22,.7,.2,1);transition-delay:var(--rd,0ms);will-change:opacity,transform}
+        [data-reveal].in{opacity:1;transform:none}
+        /* 固定在最底層的 WebGL 蟲洞，不攔截滑鼠與捲動 */
+        .tunnel-canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:0;pointer-events:none}
+        /* 壓暗蟲洞，讓文字更好讀 */
+        .tunnel-scrim{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(70% 60% at 50% 50%, rgba(4,6,15,.72) 0%, rgba(4,6,15,.5) 60%, rgba(4,6,15,.35) 100%)}
+        /* WebGL 無法使用時的備援背景 */
+        .no-webgl body{background:radial-gradient(120% 80% at 50% 0%,#1a0f4a 0%,#0a0524 55%,#04060f 100%)}
+        .page{position:relative;z-index:1}
+        .section{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:clamp(80px,12vw,160px) 24px}
+        .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+        .section-head{max-width:680px;margin:0 auto clamp(48px,6vw,80px);text-align:center}
+        .section-head h2,.cta-card h2{font-size:clamp(30px,4.4vw,50px);font-weight:800;line-height:1.1;letter-spacing:-.02em;text-shadow:0 2px 40px rgba(0,0,0,.6)}
+        .section-head p{margin-top:18px;color:var(--muted);font-size:18px;line-height:1.65;text-shadow:0 1px 24px rgba(0,0,0,.55)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:600;padding:13px 22px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:transform .18s ease,box-shadow .25s ease,background .2s ease,border-color .2s ease;white-space:nowrap}
+        .btn svg{width:17px;height:17px}
+        .btn-primary{color:var(--accent-ink);background:linear-gradient(180deg,var(--accent),var(--accent-2));box-shadow:0 10px 30px -8px rgba(93,240,168,.55),inset 0 1px 0 rgba(255,255,255,.4)}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 38px -8px rgba(93,240,168,.7)}
+        .btn-outline{color:var(--ink);background:rgba(255,255,255,.04);border-color:var(--line-strong);backdrop-filter:blur(10px)}
+        .btn-outline:hover{background:rgba(255,255,255,.09);transform:translateY(-2px)}
+        .btn-ghost{color:var(--ink);background:rgba(255,255,255,.05);border-color:var(--line-strong);padding:9px 18px}
+        .btn-ghost:hover{background:rgba(255,255,255,.1)}
+        svg.i{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+        svg.i.arrow{stroke-width:2}
+
+        /* HERO */
+        .hero{min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(125% 62% at 50% -10%, rgba(4,6,15,.82) 0%, rgba(4,6,15,.28) 44%, transparent 68%)}
+        .nav{width:100%;max-width:var(--maxw);margin:0 auto;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .brand{display:inline-flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:.16em}
+        .brand-mark{color:var(--accent);font-size:14px;transform:translateY(-1px)}
+        .nav-links{display:flex;align-items:center;gap:30px;font-size:14.5px;color:var(--muted)}
+        .nav-links a{transition:color .2s ease}
+        .nav-links a:hover{color:var(--ink)}
+        .nav-game{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+        .pill{font-size:11px;font-weight:600;color:var(--accent);background:rgba(93,240,168,.1);border:1px solid rgba(93,240,168,.2);padding:2px 8px;border-radius:999px}
+        .hero-inner{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;transform:translateY(-4vh)}
+        .avatar{width:132px;height:132px;border-radius:30px;overflow:hidden;margin-bottom:26px;border:1px solid rgba(93,240,168,.35);box-shadow:0 0 0 6px rgba(93,240,168,.06),0 24px 60px -20px rgba(0,0,0,.8);transition:transform .3s ease}
+        .avatar:hover{transform:scale(1.04)}
+        .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+        .hero-title{font-size:clamp(34px,5.2vw,62px);font-weight:800;line-height:1.08;letter-spacing:-.03em;max-width:15ch;text-shadow:0 2px 50px rgba(0,0,0,.55)}
+        .hero-title em{font-style:normal;background:linear-gradient(180deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+        .hero-sub{margin-top:24px;max-width:560px;font-size:clamp(16px,2vw,19px);line-height:1.7;color:var(--muted)}
+        .hero-actions{margin-top:38px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+        .logos{text-align:center;padding:0 24px clamp(36px,6vw,64px)}
+        .logos-label{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+        .logos-row{margin-top:16px;display:flex;flex-wrap:wrap;justify-content:center;gap:12px clamp(24px,5vw,56px)}
+        .logo{font-size:17px;font-weight:700;color:var(--muted);opacity:.9;transition:color .2s ease,opacity .2s ease}
+        .logo:hover{color:var(--ink);opacity:1}
+
+        /* 卡片 */
+        .card{position:relative;padding:30px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden;transition:transform .25s ease,border-color .25s ease,background .25s ease}
+        .card::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 120% at 0% 0%, rgba(93,240,168,.08), transparent 45%);opacity:0;transition:opacity .3s ease;pointer-events:none}
+        .card:hover{transform:translateY(-4px);border-color:var(--line-strong);background:var(--glass-2)}
+        .card:hover::before{opacity:1}
+        .card-icon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;color:var(--accent);background:rgba(93,240,168,.1);border:1px solid rgba(93,240,168,.18);margin-bottom:20px}
+        .card-icon svg{width:22px;height:22px}
+        .card h3{font-size:19px;font-weight:700}
+        .card p{margin-top:10px;font-size:15px;line-height:1.7;color:var(--muted)}
+        .card ul{margin-top:14px;list-style:none;display:grid;gap:10px;font-size:15px;color:var(--muted)}
+        .card li{display:flex;align-items:center;gap:10px}
+        .card li::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--accent);flex:none;box-shadow:0 0 10px rgba(93,240,168,.6)}
+
+        /* 關於我 */
+        .about-card{max-width:860px;margin:0 auto;padding:clamp(28px,5vw,48px)}
+        .about-card p{font-size:17px;line-height:1.85;color:var(--muted);margin-top:0}
+        .about-card p + p{margin-top:16px}
+        .about-card strong{color:var(--ink);font-weight:700}
+
+        .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+        .project-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+        .project-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+        .project-date{font-size:13px;color:var(--muted-2)}
+
+        /* CTA + 頁尾 */
+        .cta-card{max-width:760px;margin:0 auto;text-align:center;padding:clamp(48px,7vw,80px) clamp(28px,5vw,64px);border-radius:var(--radius-lg);background:radial-gradient(120% 140% at 50% 0%, rgba(93,240,168,.12), transparent 55%), var(--glass-2);border:1px solid var(--line-strong);box-shadow:var(--shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+        .cta-card p{margin:18px auto 34px;max-width:520px;color:var(--muted);font-size:17px;line-height:1.7}
+        .cta-card .hero-actions{margin-top:0}
+        .footer{display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap;margin-top:clamp(64px,9vw,110px);padding-top:48px;border-top:1px solid var(--line)}
+        .footer-brand p{margin-top:12px;color:var(--muted);font-size:14px;max-width:280px;line-height:1.6}
+        .footer-cols{display:flex;gap:clamp(32px,6vw,72px);flex-wrap:wrap}
+        .footer-cols h4{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin-bottom:14px}
+        .footer-cols a{display:block;font-size:14px;color:var(--muted);margin-top:10px;transition:color .2s ease}
+        .footer-cols a:hover{color:var(--ink)}
+        .copyright{text-align:center;margin-top:56px;font-size:13px;color:var(--muted-2)}
+
+        @media (max-width:980px){
+          .feature-grid{grid-template-columns:repeat(2,1fr)}
         }
-        /* 背景光斑呼吸動畫 */
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) scale(1); }
-            50% { transform: translateY(-20px) scale(1.05); }
+        @media (max-width:720px){
+          .nav-links{display:none}
+          .nav{padding:18px 20px}
+          .section{padding:clamp(64px,16vw,110px) 20px}
+          .project-grid{grid-template-columns:1fr}
         }
-        .animate-float-slow {
-            animation: float 8s ease-in-out infinite;
+        @media (max-width:560px){
+          .feature-grid{grid-template-columns:1fr}
+          .hero-actions .btn{flex:1}
+          .cta-card{padding:40px 22px}
+          .footer{flex-direction:column}
         }
-        .animate-float-delayed {
-            animation: float 10s ease-in-out 2s infinite;
+        @media (max-width:380px){
+          .logo{font-size:15px}
+        }
+        @media (prefers-reduced-motion:reduce){
+          html{scroll-behavior:auto}
+          [data-reveal]{opacity:1;transform:none;transition:none}
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased font-sans bg-slate-100 min-h-screen relative overflow-x-hidden">
+<body>
 
-    <!-- 1. 背景強化：動態光斑視覺元素 -->
-    <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <!-- 主漸層背景 -->
-        <div class="absolute inset-0 bg-gradient-to-br from-sky-200 via-indigo-100 to-purple-200"></div>
-        <!-- 動態光斑 1 (左上) -->
-        <div class="absolute -top-20 -left-20 w-96 h-96 bg-blue-400/40 rounded-full blur-3xl animate-float-slow"></div>
-        <!-- 動態光斑 2 (右中) -->
-        <div class="absolute top-1/3 -right-20 w-80 h-80 bg-purple-400/30 rounded-full blur-3xl animate-float-delayed"></div>
-        <!-- 動態光斑 3 (左下) -->
-        <div class="absolute bottom-10 left-10 w-96 h-96 bg-indigo-300/40 rounded-full blur-3xl animate-float-slow"></div>
+    <canvas class="tunnel-canvas" id="scene" aria-hidden="true"></canvas>
+    <div class="tunnel-scrim" aria-hidden="true"></div>
+
+    <div class="page" id="top">
+
+        <!-- SECTION 1 · HERO -->
+        <header class="hero" id="home">
+            <nav class="nav">
+                <a href="#top" class="brand"><span class="brand-mark">▲</span>Meng-Jie</a>
+                <div class="nav-links">
+                    <a href="#about">關於我</a>
+                    <a href="#skills">專業技能</a>
+                    <a href="#projects">研究與專案</a>
+                    <a href="game.html" class="nav-game">Games <span class="pill">🎮 試玩</span></a>
+                </div>
+                <a href="mailto:austenjuan2@gmail.com" class="btn btn-ghost">聯絡我</a>
+            </nav>
+
+            <div class="hero-inner">
+                <div class="avatar" data-reveal style="--rd:0ms">
+                    <img src="images.jpg" alt="阮孟杰照片">
+                </div>
+                <span class="eyebrow" data-reveal style="--rd:40ms">大同大學資工系 四年級</span>
+                <h1 class="hero-title" data-reveal style="--rd:60ms">你好，我是<br><em>阮孟杰</em></h1>
+                <p class="hero-sub" data-reveal style="--rd:180ms">專注於智慧物聯網（AIoT）專題研究，並積極探索 Vibe Coding 與現代化開發技術。</p>
+                <div class="hero-actions" data-reveal style="--rd:300ms">
+                    <a href="game.html" class="btn btn-primary">🎮 體驗我的小遊戲作品
+                        <svg class="i arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </a>
+                    <a href="#about" class="btn btn-outline">認識我</a>
+                </div>
+            </div>
+
+            <div class="logos" data-reveal style="--rd:420ms">
+                <p class="logos-label">專注領域</p>
+                <div class="logos-row">
+                    <span class="logo">IoT 研究</span>
+                    <span class="logo">Vibe Coding</span>
+                    <span class="logo">C / C++</span>
+                    <span class="logo">Python</span>
+                    <span class="logo">ESP32</span>
+                    <span class="logo">Web</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECTION 2 · 關於我 -->
+        <section class="section" id="about">
+            <div class="section-head">
+                <span class="eyebrow" data-reveal>About Me</span>
+                <h2 data-reveal style="--rd:80ms">👋 關於我</h2>
+            </div>
+            <div class="card about-card" data-reveal style="--rd:160ms">
+                <p>我是阮孟杰，目前就讀於 <strong>大同大學資訊工程學系四年級（2022年至今）</strong>。在學期間專注於 <strong>智慧物聯網 (AIoT)</strong> 相關專題研究，並積極探索 <strong>Vibe Coding</strong> 與現代化開發技術。</p>
+                <p>我抱持著好學且樂於擁抱新科技的態度，能快速適應軟硬體開發整合與團隊協作。在課業之餘，我熱衷於 <strong>健身訓練</strong> 與 <strong>出國旅遊</strong>，透過多元的體驗鍛鍊意志並拓展國際視野。</p>
+            </div>
+        </section>
+
+        <!-- SECTION 3 · 專業技能 -->
+        <section class="section" id="skills">
+            <div class="section-head">
+                <span class="eyebrow" data-reveal>Skills</span>
+                <h2 data-reveal style="--rd:80ms">💡 專業技能與工具</h2>
+                <p data-reveal style="--rd:160ms">從程式開發、物聯網硬體到持續學習的個人特質。</p>
+            </div>
+            <div class="feature-grid">
+                <div class="card" data-reveal style="--rd:0ms">
+                    <div class="card-icon"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M6 9v3a3 3 0 0 0 3 3h3"/></svg></div>
+                    <h3>🛠️ 程式開發與技術</h3>
+                    <ul>
+                        <li>C / C++ 程式設計</li>
+                        <li>Python 基礎與應用</li>
+                        <li>HTML5 / CSS3 / JavaScript</li>
+                        <li>Vibe Coding &amp; AI 輔助開發</li>
+                    </ul>
+                </div>
+                <div class="card" data-reveal style="--rd:90ms">
+                    <div class="card-icon"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg></div>
+                    <h3>📡 智慧物聯網 (IoT)</h3>
+                    <ul>
+                        <li>感測器整合與數據擷取</li>
+                        <li>微控制器開發 (Arduino / ESP32)</li>
+                        <li>基本網路通訊協定應用</li>
+                    </ul>
+                </div>
+                <div class="card" data-reveal style="--rd:180ms">
+                    <div class="card-icon"><svg class="i" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg></div>
+                    <h3>🌟 個人特質與興趣</h3>
+                    <ul>
+                        <li>自我驅動、持續充實新知</li>
+                        <li>重量訓練與健康管理</li>
+                        <li>自助旅遊、跨文化體驗</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4 · 研究專案與經歷 -->
+        <section class="section" id="projects">
+            <div class="section-head">
+                <span class="eyebrow" data-reveal>Projects &amp; Research</span>
+                <h2 data-reveal style="--rd:80ms">🚀 研究專案與經歷</h2>
+            </div>
+            <div class="project-grid">
+                <div class="card" data-reveal style="--rd:0ms">
+                    <div class="project-meta">
+                        <span class="pill">畢業專題</span>
+                        <span class="project-date">2024 - Present</span>
+                    </div>
+                    <h3>智慧物聯網 (AIoT) 應用研究</h3>
+                    <p>結合物聯網硬體裝置與數據分析，針對特定生活情境設計智慧化自動感測與遠端控制系統，提升生活便利性與能源使用效率。</p>
+                </div>
+                <div class="card" data-reveal style="--rd:90ms">
+                    <div class="project-meta">
+                        <span class="pill">網頁與遊戲</span>
+                        <span class="project-date">2026</span>
+                    </div>
+                    <h3>Glassmorphism 個人網頁與小遊戲整合</h3>
+                    <p>運用 Tailwind CSS 與 Glassmorphism 設計風格建構個人響應式網站，並整合 HTML5 小遊戲，展現前端介面設計與互動邏輯能力。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5 · CTA + 頁尾 -->
+        <section class="section" id="contact">
+            <div class="cta-card">
+                <span class="eyebrow" data-reveal style="--rd:60ms">Let's connect</span>
+                <h2 data-reveal style="--rd:140ms">一起聊聊新點子</h2>
+                <p data-reveal style="--rd:220ms">歡迎來信交流專題、合作或任何有趣的想法，也可以先玩玩我的小遊戲。</p>
+                <div class="hero-actions" data-reveal style="--rd:300ms">
+                    <a href="mailto:austenjuan2@gmail.com" class="btn btn-primary">austenjuan2@gmail.com
+                        <svg class="i arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </a>
+                    <a href="game.html" class="btn btn-outline">🎮 試玩小遊戲</a>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-brand">
+                    <a href="#top" class="brand"><span class="brand-mark">▲</span>Meng-Jie</a>
+                    <p>大同大學資工系四年級，專注 AIoT 與 Vibe Coding。</p>
+                </div>
+                <div class="footer-cols">
+                    <div>
+                        <h4>導覽</h4>
+                        <a href="#about">關於我</a>
+                        <a href="#skills">專業技能</a>
+                        <a href="#projects">研究與專案</a>
+                    </div>
+                    <div>
+                        <h4>作品</h4>
+                        <a href="game.html">小遊戲</a>
+                    </div>
+                    <div>
+                        <h4>聯絡</h4>
+                        <a href="mailto:austenjuan2@gmail.com">Email</a>
+                    </div>
+                </div>
+            </footer>
+            <p class="copyright">&copy; <span id="year">2026</span> 阮孟杰 (Meng-Jie). All rights reserved.</p>
+        </section>
+
     </div>
 
-    <!-- 導覽列 -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/40 border-b border-white/30 transition-all">
-        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="#" class="font-extrabold text-xl tracking-wider text-slate-900 hover:text-sky-600 transition">Meng-Jie</a>
-            <nav class="hidden md:flex space-x-8 text-sm font-semibold">
-                <a href="#home" class="text-sky-900 hover:text-sky-600 transition">關於我</a>
-                <a href="#skills" class="text-slate-600 hover:text-sky-600 transition">專業技能</a>
-                <a href="#projects" class="text-slate-600 hover:text-sky-600 transition">研究與專案</a>
-                <a href="game.html" class="text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 font-bold">
-                    <span>Games</span> <span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">🎮 試玩</span>
-                </a>
-            </nav>
-            <a href="mailto:austenjuan2@gmail.com" class="text-sm font-medium px-5 py-2 rounded-full glass-card hover:bg-white/60 transition shadow-sm">聯絡我</a>
-        </div>
-    </header>
+    <!-- 捲動顯示動畫 + Lenis 平滑捲動 -->
+    <script type="module">
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        document.getElementById('year').textContent = new Date().getFullYear();
 
-    <!-- 主要內容區塊 -->
-    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
-        
-        <!-- Hero + About 區塊 (Bento Grid) -->
-        <section id="home" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <!-- 個人照片卡片 -->
-            <div class="glass-card rounded-3xl p-6 flex flex-col items-center justify-center text-center md:col-span-1 transition duration-300">
-                <div class="w-36 h-36 rounded-2xl overflow-hidden shadow-xl mb-4 border-2 border-white/80 transform hover:scale-105 transition duration-300">
-                    <img src="images.jpg" alt="阮孟杰照片" class="w-full h-full object-cover">
-                </div>
-                <h1 class="text-2xl font-bold text-slate-900">阮孟杰</h1>
-                <p class="text-sm text-sky-800 font-semibold mt-1">大同大學資工系 四年級</p>
-                <div class="mt-4 flex gap-2 flex-wrap justify-center">
-                    <span class="text-xs bg-white/60 border border-white/40 px-2.5 py-1 rounded-full text-slate-700">IoT 研究</span>
-                    <span class="text-xs bg-white/60 border border-white/40 px-2.5 py-1 rounded-full text-slate-700">Vibe Coding</span>
-                </div>
-            </div>
+        const items = document.querySelectorAll('[data-reveal]');
+        if (reduced || !('IntersectionObserver' in window)) {
+            items.forEach(el => el.classList.add('in'));
+        } else {
+            const io = new IntersectionObserver(entries => {
+                entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+            }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+            items.forEach(el => io.observe(el));
+        }
 
-            <!-- About / Bio 區塊 -->
-            <div class="glass-card rounded-3xl p-8 md:col-span-2 flex flex-col justify-between transition duration-300">
-                <div>
-                    <h2 class="text-xl font-bold mb-3 text-slate-900 flex items-center gap-2">
-                        <span>👋</span> 關於我 (About Me)
-                    </h2>
-                    <p class="text-slate-700 leading-relaxed">
-                        我是阮孟杰，目前就讀於 **大同大學資訊工程學系四年級（2022年至今）**。在學期間專注於 **智慧物聯網 (AIoT)** 相關專題研究，並積極探索 **Vibe Coding** 與現代化開發技術。
-                    </p>
-                    <p class="text-slate-700 leading-relaxed mt-3">
-                        我抱持著好學且樂於擁抱新科技的态度，能快速適應軟硬體開發整合與團隊協作。在課業之餘，我熱衷於 **健身訓練** 與 **出國旅遊**，透過多元的體驗鍛鍊意志並拓展國際視野。
-                    </p>
-                </div>
-                
-                <div class="mt-6 pt-4 border-t border-white/30 flex flex-col sm:flex-row gap-3">
-                    <a href="game.html" class="flex-1 inline-flex items-center justify-center space-x-2 py-3 px-6 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-md transition transform hover:-translate-y-0.5">
-                        <span>🎮 體驗我的小遊戲作品</span>
-                    </a>
-                </div>
-            </div>
-        </section>
+        if (!reduced) {
+            try {
+                const { default: Lenis } = await import('https://unpkg.com/lenis@1.3.23/dist/lenis.mjs');
+                const lenis = new Lenis({ duration: 1.15, smoothWheel: true, touchMultiplier: 1.5 });
+                const raf = t => { lenis.raf(t); requestAnimationFrame(raf); };
+                requestAnimationFrame(raf);
+                document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+                    const target = document.querySelector(a.getAttribute('href'));
+                    if (target) { e.preventDefault(); lenis.scrollTo(target); }
+                }));
+            } catch (err) { /* Lenis 載入失敗時沿用原生捲動 */ }
+        }
+    </script>
 
-        <!-- 2. 新增：專業技能區塊 (減少留白) -->
-        <section id="skills" class="space-y-4">
-            <h2 class="text-xl font-bold text-slate-900 px-2">💡 專業技能與工具 (Skills)</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="glass-card rounded-3xl p-6">
-                    <h3 class="font-bold text-slate-900 text-base mb-3 flex items-center gap-2">
-                        <span>🛠️</span> 程式開發與技術
-                    </h3>
-                    <ul class="space-y-2 text-sm text-slate-700">
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>C / C++ 程式設計</li>
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>Python 基礎與應用</li>
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>HTML5 / CSS3 / JavaScript</li>
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>Vibe Coding & AI 輔助開發</li>
-                    </ul>
-                </div>
+    <!-- Tunnel 蟲洞背景（getlayers Tunnel，全程序生成，無外部素材） -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { GammaCorrectionShader } from 'three/addons/shaders/GammaCorrectionShader.js';
+        import { CopyShader } from 'three/addons/shaders/CopyShader.js';
 
-                <div class="glass-card rounded-3xl p-6">
-                    <h3 class="font-bold text-slate-900 text-base mb-3 flex items-center gap-2">
-                        <span>📡</span> 智慧物聯網 (IoT)
-                    </h3>
-                    <ul class="space-y-2 text-sm text-slate-700">
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>感測器整合與數據擷取</li>
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>微控制器開發 (Arduino / ESP32)</li>
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>基本網路通訊協定應用</li>
-                    </ul>
-                </div>
+        const Lerp = (a, b, t) => a + (b - a) * t;
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        function hexToVec3(hex) {
+            const n = parseInt(hex.slice(1), 16);
+            return new THREE.Vector3(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+        }
 
-                <div class="glass-card rounded-3xl p-6">
-                    <h3 class="font-bold text-slate-900 text-base mb-3 flex items-center gap-2">
-                        <span>🌟</span> 個人特質與興趣
-                    </h3>
-                    <ul class="space-y-2 text-sm text-slate-700">
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>自我驅動、持續充實新知</li>
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>重量訓練與健康管理</li>
-                        <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>自助旅遊、跨文化體驗</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
+        const canvas = document.getElementById('scene');
+        let renderer;
+        try {
+            renderer = new THREE.WebGL1Renderer({ canvas, antialias: true });
+        } catch (err) {
+            document.documentElement.classList.add('no-webgl');
+            canvas.remove();
+            throw err;
+        }
+        // 手機像素比上限 2，避免過度耗能
+        const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
+        renderer.setPixelRatio(dpr());
+        renderer.setSize(innerWidth, innerHeight, false);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.VSMShadowMap;
 
-        <!-- 3. 新增：專案與研究經歷 (減少留白) -->
-        <section id="projects" class="space-y-4">
-            <h2 class="text-xl font-bold text-slate-900 px-2">🚀 研究專案與經歷 (Projects & Research)</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- 專案 1 -->
-                <div class="glass-card rounded-3xl p-6 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold px-2.5 py-1 bg-sky-100 text-sky-800 rounded-full">畢業專題</span>
-                        <span class="text-xs text-slate-500">2024 - Present</span>
-                    </div>
-                    <h3 class="text-lg font-bold text-slate-900">智慧物聯網 (AIoT) 應用研究</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">
-                        結合物聯網硬體裝置與數據分析，針對特定生活情境設計智慧化自動感測與遠端控制系統，提升生活便利性與能源使用效率。
-                    </p>
-                </div>
+        const LAYERS = { NONE: 0, TORUS_SCENE: 1, BLOOM_SCENE: 2, ENTIRE_SCENE: 3 };
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.Fog(0x000000, 0, 15);
+        const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 400);
+        camera.position.set(0, 0, 20);
+        camera.layers.enable(LAYERS.TORUS_SCENE);
+        camera.layers.enable(LAYERS.BLOOM_SCENE);
+        camera.layers.enable(LAYERS.ENTIRE_SCENE);
+        scene.add(camera);
 
-                <!-- 專案 2 -->
-                <div class="glass-card rounded-3xl p-6 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-full">網頁與遊戲</span>
-                        <span class="text-xs text-slate-500">2026</span>
-                    </div>
-                    <h3 class="text-lg font-bold text-slate-900">Glassmorphism 個人網頁與小遊戲整合</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">
-                        運用 Tailwind CSS 與 Glassmorphism 設計風格建構個人響應式網站，並整合 HTML5 小遊戲，展現前端介面設計與互動邏輯能力。
-                    </p>
-                </div>
-            </div>
-        </section>
+        const FinalPass = {
+            uniforms: {
+                iTime: { value: 0 },
+                tDiffuse: { value: null }, torusTexture: { value: null }, bloomTexture: { value: null }, haloTexture: { value: null },
+                uBg: { value: hexToVec3('#0a0524') },
+                uFlameA: { value: hexToVec3('#2bf0ff') },
+                uFlameB: { value: hexToVec3('#7a3cff') },
+                uFlameAmt: { value: 0.2 }
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position, 1.0); }`,
+            fragmentShader: `
+uniform float iTime; uniform sampler2D tDiffuse; uniform sampler2D bloomTexture; uniform sampler2D torusTexture; uniform sampler2D haloTexture;
+uniform vec3 uBg; uniform vec3 uFlameA; uniform vec3 uFlameB; uniform float uFlameAmt;
+varying vec2 vUv;
+vec3 warp3d(vec3 pos, float t){ float curv=.8,a=1.9,b=0.7; pos*=2.;
+  pos.x+=curv*sin(t+a*pos.y)+t*b; pos.y+=curv*cos(t+a*pos.x);
+  pos.y+=curv*sin(t+a*pos.z)+t*b; pos.z+=curv*cos(t+a*pos.y);
+  pos.z+=curv*sin(t+a*pos.x)+t*b; pos.x+=curv*cos(t+a*pos.z);
+  return 0.5+0.5*cos(pos.xyz+vec3(1,2,4)); }
+void main(){
+  vec2 uv = 2.*vUv - 1.;
+  vec3 w = pow(warp3d(vec3(uv.x, sin(uv.y), uv.y), iTime*1.5), vec3(1.5));
+  vec3 flame = 1.5*uFlameA*w.x; flame*=w.y; flame += uFlameB*w.z;
+  flame *= smoothstep(0.25, 1., abs(uv.y));
+  float md = smoothstep(-0.7, 1., -uv.y*uv.x); flame *= md*md;
+  vec3 bg = uBg * (1.0 - 0.4 * length(uv));
+  vec3 halo = texture2D(haloTexture, vUv).xyz;
+  gl_FragColor = vec4(bg + flame*uFlameAmt + texture2D(bloomTexture, vUv).xyz + texture2D(torusTexture, vUv).xyz + texture2D(tDiffuse, vUv).xyz + halo, 1.);
+}`
+        };
 
-    </main>
+        const renderScene = new RenderPass(scene, camera);
+        const torusComposer = new EffectComposer(renderer); torusComposer.renderToScreen = false;
+        torusComposer.addPass(renderScene);
+        torusComposer.addPass(new ShaderPass(GammaCorrectionShader));
+        torusComposer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.22, 0.2, 0));
+        torusComposer.addPass(new ShaderPass(CopyShader));
 
-    <!-- 頁尾 -->
-    <footer class="max-w-5xl mx-auto px-6 py-8 mt-12 border-t border-white/30 text-center text-sm text-slate-600">
-        <p>Let's connect: <a href="mailto:austenjuan2@gmail.com" class="font-semibold underline hover:text-sky-600 transition">austenjuan2@gmail.com</a></p>
-        <p class="mt-2 text-xs text-slate-500">&copy; 2026 阮孟杰 (Meng-Jie). All rights reserved.</p>
-    </footer>
+        const bloomComposer = new EffectComposer(renderer); bloomComposer.renderToScreen = false;
+        bloomComposer.addPass(renderScene);
+        bloomComposer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.7, 0.6, 0));
+        bloomComposer.addPass(new ShaderPass(GammaCorrectionShader));
+
+        const finalPass = new ShaderPass(FinalPass);
+        finalPass.uniforms.bloomTexture.value = bloomComposer.renderTarget1.texture;
+        finalPass.uniforms.torusTexture.value = torusComposer.renderTarget1.texture;
+        const finalComposer = new EffectComposer(renderer);
+        finalComposer.addPass(renderScene); finalComposer.addPass(finalPass);
+
+        const SNOISE = `
+vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+float snoise(vec3 v){
+  const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy);
+  vec3 x1 = x0 - i1 + 1.0 * C.xxx; vec3 x2 = x0 - i2 + 2.0 * C.xxx; vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
+  i = mod(i, 289.0);
+  vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+  float n_ = 1.0/7.0; vec3 ns = n_ * D.wyz - D.xzx;
+  vec4 j = p - 49.0 * floor(p * ns.z *ns.z);
+  vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_);
+  vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy; vec4 h = 1.0 - abs(x) - abs(y);
+  vec4 b0 = vec4(x.xy, y.xy); vec4 b1 = vec4(x.zw, y.zw);
+  vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0; vec4 sh = -step(h, vec4(0.0));
+  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+  vec3 p0 = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y); vec3 p2 = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w);
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+  vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0); m = m * m;
+  return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+}`;
+
+        // 隧道粒子
+        const uniforms = {
+            uTime: { value: 0 },
+            uAppear: { value: 0 },
+            uColLow: { value: hexToVec3('#180a3a') },
+            uColHigh: { value: hexToVec3('#2bf0ff') },
+            uOpacity: { value: 1.44 },
+            uSize: { value: 5 },
+            uBrightness: { value: 0.4 },
+            uSwirl: { value: 0.39 },
+            uScale: { value: 0.17 },
+            uCursor: { value: new THREE.Vector3() },
+            uRepelRadius: { value: 2.4 },
+            uRepelStrength: { value: 0.8 },
+            uActivity: { value: 0 }
+        };
+        const tunnelMat = new THREE.ShaderMaterial({
+            uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+            vertexShader: `
+uniform float uTime; uniform float uSize; uniform float uSwirl; uniform float uScale;
+uniform vec3 uColLow; uniform vec3 uColHigh;
+uniform vec3 uCursor; uniform float uRepelRadius; uniform float uRepelStrength; uniform float uActivity;
+varying float vFade; varying vec3 vColor;
+${SNOISE}
+void main() {
+  vec3 wp = vec3(position.x * 7.0, 0.0, position.z * 25.0);
+  wp.x += position.y * 6.0;
+  float wn = snoise(vec3(wp.x * 0.08, wp.z * 0.08, uTime * 0.15)) * 2.0;
+  wn += snoise(vec3(wp.x * 0.16, wp.z * 0.16, uTime * 0.3)) * 0.8;
+
+  float tunnelR = 12.0;
+  float currentSliceRadius = sqrt(max(0.0, 17.64 - position.z * position.z));
+  float maxSliceWidth = 9.2195 * currentSliceRadius;
+  float normalizedX = wp.x / (maxSliceWidth + 0.001);
+  float tunnelAngle = normalizedX * 3.14159265;
+
+  float jitterAngle = snoise(vec3(position.x * 15.0, position.y * 15.0, uTime * 0.1)) * 0.35;
+  float jitterZ = snoise(vec3(position.y * 15.0, position.z * 15.0, uTime * 0.1)) * 4.0;
+  float ambientSwirl = snoise(vec3(position.x * 5.0, position.y * 5.0, uTime * 0.2)) * 3.0;
+  tunnelAngle += jitterAngle + ambientSwirl * uSwirl;
+
+  float dynamicR = tunnelR - wn;
+  vec3 tunnelPos = vec3(dynamicR * sin(tunnelAngle), -dynamicR * cos(tunnelAngle), wp.z + jitterZ);
+
+  vec3 finalPos = tunnelPos * uScale;
+  vec4 modelPosition = modelMatrix * vec4(finalPos, 1.0);
+  vec3 toP = modelPosition.xyz - uCursor;
+  float cd = length(toP);
+  float fall = smoothstep(uRepelRadius, 0.0, cd);
+  modelPosition.xyz += normalize(toP + vec3(0.0001)) * fall * uRepelStrength * uActivity;
+  vec4 mvPosition = viewMatrix * modelPosition;
+
+  float colMix = smoothstep(-3.0, 3.0, position.y + position.x * 0.5);
+  vColor = mix(uColLow, uColHigh, clamp(colMix, 0.0, 1.0));
+  vFade = 1.0;
+
+  gl_PointSize = uSize * (10.0 / -mvPosition.z);
+  gl_PointSize = max(gl_PointSize, 1.5);
+  gl_Position = projectionMatrix * mvPosition;
+}`,
+            fragmentShader: `
+uniform float uOpacity; uniform float uBrightness; uniform float uAppear;
+varying float vFade; varying vec3 vColor;
+void main() {
+  vec2 xy = gl_PointCoord - 0.5;
+  float ll = length(xy);
+  if (ll > 0.5) discard;
+  float a = smoothstep(0.5, 0.1, ll);
+  gl_FragColor = vec4(vColor * uBrightness, vFade * a * uOpacity * uAppear);
+}`
+        });
+        const tunnel = new THREE.Points(new THREE.SphereGeometry(4.2, 200, 600), tunnelMat);
+        tunnel.frustumCulled = false;
+        tunnel.layers.enable(LAYERS.ENTIRE_SCENE);
+        const group = new THREE.Group();
+        group.add(tunnel);
+        scene.add(group);
+
+        // 漂浮光點
+        const N = 300;
+        const positions = new Float32Array(N * 3), sizes = new Float32Array(N), seeds = new Float32Array(N);
+        for (let i = 0; i < N; i++) {
+            positions[i*3] = 2*Math.random()-1; positions[i*3+1] = 2*Math.random()-1; positions[i*3+2] = 2*Math.random()-1;
+            sizes[i] = 24 * (0.4 + Math.random()); seeds[i] = Math.random();
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        g.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+        g.setAttribute('seed', new THREE.Float32BufferAttribute(seeds, 1));
+        const atmoMat = new THREE.ShaderMaterial({
+            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
+            uniforms: {
+                uTime: { value: 0 },
+                uColor: { value: hexToVec3('#8fe6ff') },
+                uRes: { value: new THREE.Vector2(innerWidth * dpr(), innerHeight * dpr()) }
+            },
+            vertexShader: `
+attribute float size; attribute float seed; uniform float uTime; uniform vec2 uRes;
+varying float vA;
+vec3 warp(vec3 p, float t){ float c=0.9,a=1.9,b=0.02,s=0.05; p*=2.;
+  p.x+=c*sin(s*t+a*p.y)+t*b; p.y+=c*cos(s*t+a*p.x); p.y+=c*sin(s*t+a*p.z)+t*b;
+  p.z+=c*cos(s*t+a*p.y); p.z+=c*sin(s*t+a*p.x)+t*b; p.x+=c*cos(s*t+a*p.z);
+  return cos(p+vec3(1,2,4)); }
+void main(){
+  vec3 v = position*4.0 + warp(position, uTime)*1.2;
+  vec4 mv = modelViewMatrix * vec4(v, 1.0);
+  float r = length(v); float farF = 1.0 - smoothstep(5.0, 6.5, r); float nearF = smoothstep(0.0, 0.5, -mv.z);
+  vA = farF * nearF;
+  gl_PointSize = size * uRes.y / 900.0 / -mv.z; gl_PointSize = max(gl_PointSize, 1.0);
+  gl_Position = projectionMatrix * mv;
+}`,
+            fragmentShader: `
+uniform vec3 uColor; varying float vA;
+void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) discard;
+  float tex = smoothstep(0.5, 0.0, l); gl_FragColor = vec4(uColor * tex, tex * vA * 0.6); }`
+        });
+        const atmo = new THREE.Points(g, atmoMat);
+        atmo.frustumCulled = false;
+        atmo.layers.enable(LAYERS.ENTIRE_SCENE);
+        atmo.onBeforeRender = () => {
+            const t = performance.now() / 1000;
+            atmoMat.uniforms.uTime.value = t * 8.0;
+            atmo.position.copy(camera.position);
+            finalPass.uniforms.iTime.value = t;
+        };
+        scene.add(atmo);
+
+        // 捲動與滑鼠
+        let scrollTarget = 0, scrollSmooth = 0, scrollCurrent = 0;
+        const updateScroll = () => {
+            const max = document.documentElement.scrollHeight - innerHeight;
+            scrollTarget = max > 0 ? clamp(scrollY / max, 0, 1) : 0;
+        };
+        addEventListener('scroll', updateScroll, { passive: true });
+
+        const mouse = { x: 0, y: 0 }, mouseTarget = { x: 0, y: 0 };
+        const POINTER = { active: false, lastMove: 0, world: new THREE.Vector3(), activity: 0 };
+        addEventListener('mousemove', e => {
+            mouseTarget.x = e.clientX / innerWidth * 2 - 1;
+            mouseTarget.y = -(e.clientY / innerHeight * 2 - 1);
+            POINTER.active = true;
+            POINTER.lastMove = performance.now();
+        });
+        document.addEventListener('mouseout', e => { if (!e.relatedTarget) POINTER.active = false; });
+
+        const _ndc = new THREE.Vector3(), _dir = new THREE.Vector3(), _tgt = new THREE.Vector3();
+        function updatePointerWorld() {
+            _tgt.set(0, 0, 0);
+            if (POINTER.active) {
+                _ndc.set(mouse.x, mouse.y, 0.5).unproject(camera);
+                _dir.copy(_ndc).sub(camera.position).normalize();
+                const dn = _dir.z;
+                if (Math.abs(dn) > 1e-4) { const tt = -camera.position.z / dn; if (tt > 0 && Number.isFinite(tt)) _tgt.copy(camera.position).addScaledVector(_dir, tt); }
+            }
+            POINTER.world.lerp(_tgt, 0.12);
+            const idle = (performance.now() - POINTER.lastMove) / 1000;
+            POINTER.activity += (((POINTER.active && idle < 3) ? 1 : 0) - POINTER.activity) * 0.06;
+        }
+
+        const state = { t0: performance.now() / 1000, rollPhase: 0, appearStart: performance.now() };
+        function updateScene(scroll, m) {
+            const t = performance.now() / 1000;
+            const dt = Math.min(0.05, t - state.t0); state.t0 = t;
+            uniforms.uTime.value = t;
+            camera.position.set(m.x * 0.12, m.y * 0.12, 20 - scroll * 34);
+            camera.lookAt(m.x * 0.6, m.y * 0.6, camera.position.z - 12);
+            updatePointerWorld();
+            uniforms.uSwirl.value = 0.39 * (1 + scroll * 1.5);
+            state.rollPhase += dt * (0.065 + scroll * 0.05);
+            group.rotation.z = state.rollPhase;
+            uniforms.uCursor.value.copy(POINTER.world);
+            uniforms.uActivity.value = POINTER.activity;
+            const elapsed = (performance.now() - state.appearStart) / 1000;
+            uniforms.uAppear.value = Math.max(0, Math.min(1, (elapsed - 0.2) / 1.4));
+        }
+
+        function resize() {
+            const w = innerWidth, h = innerHeight, r = dpr();
+            renderer.setPixelRatio(r);
+            renderer.setSize(w, h, false);
+            camera.aspect = w / h; camera.updateProjectionMatrix();
+            for (const c of [torusComposer, bloomComposer, finalComposer]) { c.setPixelRatio(r); c.setSize(w, h); }
+            atmoMat.uniforms.uRes.value.set(w * r, h * r);
+            updateScroll();
+        }
+        addEventListener('resize', resize);
+        resize();
+
+        function render() {
+            requestAnimationFrame(render);
+            scrollSmooth = Lerp(scrollSmooth, scrollTarget, 0.10);
+            scrollCurrent = Lerp(scrollCurrent, scrollSmooth, 0.06);
+            mouse.x = Lerp(mouse.x, mouseTarget.x, 0.06);
+            mouse.y = Lerp(mouse.y, mouseTarget.y, 0.06);
+            updateScene(scrollCurrent, mouse);
+            camera.layers.set(LAYERS.TORUS_SCENE);  torusComposer.render();
+            camera.layers.set(LAYERS.BLOOM_SCENE);  bloomComposer.render();
+            camera.layers.set(LAYERS.ENTIRE_SCENE); finalComposer.render();
+        }
+        render();
+    </script>
 
 </body>
 </html>
