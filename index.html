@@ -71,7 +71,11 @@
 
         /* HERO */
         .hero{min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(125% 62% at 50% -10%, rgba(4,6,15,.82) 0%, rgba(4,6,15,.28) 44%, transparent 68%)}
+        .topbar{position:fixed;top:0;left:0;right:0;z-index:50;transition:background .3s ease,border-color .3s ease,backdrop-filter .3s ease;border-bottom:1px solid transparent}
+        .topbar.scrolled{background:rgba(4,6,15,.72);border-bottom-color:var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
         .nav{width:100%;max-width:var(--maxw);margin:0 auto;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .hero{padding-top:84px}
+        section[id]{scroll-margin-top:80px}
         .brand{display:inline-flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:.16em}
         .brand-mark{color:var(--accent);font-size:14px;transform:translateY(-1px)}
         .nav-links{display:flex;align-items:center;gap:30px;font-size:14.5px;color:var(--muted)}
@@ -90,6 +94,7 @@
         .logos{text-align:center;padding:0 24px clamp(36px,6vw,64px)}
         .logos-label{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
         .logos-row{margin-top:16px;display:flex;flex-wrap:wrap;justify-content:center;gap:12px clamp(24px,5vw,56px)}
+        a.logo:hover{color:var(--accent)}
         .logo{font-size:17px;font-weight:700;color:var(--muted);opacity:.9;transition:color .2s ease,opacity .2s ease}
         .logo:hover{color:var(--ink);opacity:1}
 
@@ -160,8 +165,8 @@
 
     <div class="page" id="top">
 
-        <!-- SECTION 1 · HERO -->
-        <header class="hero" id="home">
+        <!-- 固定導覽列 -->
+        <header class="topbar" id="topbar">
             <nav class="nav">
                 <a href="#top" class="brand"><span class="brand-mark">▲</span>Meng-Jie</a>
                 <div class="nav-links">
@@ -172,6 +177,10 @@
                 </div>
                 <a href="mailto:austenjuan2@gmail.com" class="btn btn-ghost">聯絡我</a>
             </nav>
+        </header>
+
+        <!-- SECTION 1 · HERO -->
+        <section class="hero" id="home">
 
             <div class="hero-inner">
                 <div class="avatar" data-reveal style="--rd:0ms">
@@ -191,15 +200,15 @@
             <div class="logos" data-reveal style="--rd:420ms">
                 <p class="logos-label">專注領域</p>
                 <div class="logos-row">
-                    <span class="logo">IoT 研究</span>
-                    <span class="logo">Vibe Coding</span>
-                    <span class="logo">C / C++</span>
-                    <span class="logo">Python</span>
-                    <span class="logo">ESP32</span>
-                    <span class="logo">Web</span>
+                    <a href="#skills" class="logo">IoT 研究</a>
+                    <a href="#skills" class="logo">Vibe Coding</a>
+                    <a href="#skills" class="logo">C / C++</a>
+                    <a href="#skills" class="logo">Python</a>
+                    <a href="#skills" class="logo">ESP32</a>
+                    <a href="#skills" class="logo">Web</a>
                 </div>
             </div>
-        </header>
+        </section>
 
         <!-- SECTION 2 · 關於我 -->
         <section class="section" id="about">
@@ -342,16 +351,39 @@
             items.forEach(el => io.observe(el));
         }
 
+        // 導覽列捲動後加上背景
+        const topbar = document.getElementById('topbar');
+        const onScroll = () => topbar.classList.toggle('scrolled', scrollY > 20);
+        addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+
+        // 頁內連結：不依賴 Lenis，Lenis 沒載入或沒反應時改用原生捲動
+        let lenis = null;
+        document.addEventListener('click', e => {
+            const a = e.target.closest('a[href^="#"]');
+            if (!a) return;
+            const id = a.getAttribute('href');
+            const target = id === '#top' ? document.body : document.querySelector(id);
+            if (!target) return;
+            e.preventDefault();
+            const top = id === '#top' ? 0 : Math.max(0, target.getBoundingClientRect().top + scrollY - topbar.offsetHeight);
+            if (lenis) lenis.scrollTo(top);
+            else window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
+            history.replaceState(null, '', id);
+            setTimeout(() => {
+                if (Math.abs(scrollY - top) > 40) {
+                    if (lenis) lenis.scrollTo(top, { immediate: true });
+                    window.scrollTo(0, top);
+                }
+            }, 1600);
+        });
+
         if (!reduced) {
             try {
                 const { default: Lenis } = await import('https://unpkg.com/lenis@1.3.23/dist/lenis.mjs');
-                const lenis = new Lenis({ duration: 1.15, smoothWheel: true, touchMultiplier: 1.5 });
+                lenis = new Lenis({ duration: 1.15, smoothWheel: true, touchMultiplier: 1.5 });
                 const raf = t => { lenis.raf(t); requestAnimationFrame(raf); };
                 requestAnimationFrame(raf);
-                document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
-                    const target = document.querySelector(a.getAttribute('href'));
-                    if (target) { e.preventDefault(); lenis.scrollTo(target); }
-                }));
             } catch (err) { /* Lenis 載入失敗時沿用原生捲動 */ }
         }
     </script>
