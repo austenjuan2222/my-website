@@ -121,6 +121,7 @@
         .project-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
         .project-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
         .project-date{font-size:13px;color:var(--muted-2)}
+        .project-wide{grid-column:1/-1;display:block}
 
         /* CTA + 頁尾 */
         .cta-card{max-width:760px;margin:0 auto;text-align:center;padding:clamp(48px,7vw,80px) clamp(28px,5vw,64px);border-radius:var(--radius-lg);background:radial-gradient(120% 140% at 50% 0%, rgba(93,240,168,.12), transparent 55%), var(--glass-2);border:1px solid var(--line-strong);box-shadow:var(--shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
@@ -284,6 +285,15 @@
                     <h3>Glassmorphism 個人網頁與小遊戲整合</h3>
                     <p>運用 Tailwind CSS 與 Glassmorphism 設計風格建構個人響應式網站，並整合 HTML5 小遊戲，展現前端介面設計與互動邏輯能力。</p>
                 </div>
+                <a href="rps.html" class="card project-wide" data-reveal style="--rd:180ms">
+                    <div class="project-meta">
+                        <span class="pill">線上對戰</span>
+                        <span class="project-date">2026</span>
+                    </div>
+                    <h3>✊ 猜拳對決：Firebase 即時連線</h3>
+                    <p>兩支手機輸入同一個 4 位數房號就能即時猜拳。用 Firebase Realtime Database 同步出拳，雙方都出拳後才公布輸贏與比分。</p>
+                    <span class="btn btn-primary" style="margin-top:20px">開始對戰 →</span>
+                </a>
             </div>
         </section>
 
