@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>猜拳對決 | 線上對戰</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Firebase（compat 版，一般 script 標籤，不用 type="module"） -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <style>
+        /* 與首頁相同的配色（getlayers 風格） */
+        :root{
+          --bg:#04060f; --ink:#f3f6ff; --muted:#9aa6c4; --muted-2:#6b7796;
+          --line:rgba(150,175,230,.12); --line-strong:rgba(150,175,230,.22);
+          --accent:#5df0a8; --accent-2:#2fd38a; --accent-ink:#032018;
+          --danger:#ff7a90; --warn:#ffd36b;
+          --glass:rgba(12,18,38,.55); --glass-2:rgba(16,24,48,.65);
+          --radius:18px; --radius-lg:26px;
+          --font:'Inter','Noto Sans TC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+             background:radial-gradient(120% 80% at 50% 0%,#1a0f4a 0%,#0a0524 55%,#04060f 100%) fixed}
+        a{color:inherit;text-decoration:none}
+        button,input{font:inherit;color:inherit}
+        .wrap{max-width:520px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px 40px}
+        .top{display:flex;align-items:center;justify-content:space-between;padding:8px 0 22px}
+        .brand{display:inline-flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.14em;font-size:16px}
+        .brand b{color:var(--accent)}
+        .back{font-size:14px;color:var(--muted);padding:8px 14px;border:1px solid var(--line-strong);border-radius:999px;background:rgba(255,255,255,.04)}
+        .eyebrow{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+        h1{font-size:clamp(30px,8vw,42px);font-weight:900;letter-spacing:-.02em;margin-top:8px}
+        .sub{color:var(--muted);margin-top:8px;line-height:1.6}
+        .card{margin-top:20px;padding:22px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+        label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+        input{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--line-strong);background:rgba(255,255,255,.05);font-size:18px;outline:none}
+        input:focus{border-color:var(--accent)}
+        .code-input{text-align:center;font-size:28px;font-weight:800;letter-spacing:.4em}
+        .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;font-size:17px;font-weight:700;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:transform .15s ease,opacity .2s ease}
+        .btn:active{transform:scale(.97)}
+        .btn:disabled{opacity:.45;cursor:not-allowed}
+        .btn-primary{color:var(--accent-ink);background:linear-gradient(180deg,var(--accent),var(--accent-2));box-shadow:0 10px 30px -8px rgba(93,240,168,.55)}
+        .btn-outline{background:rgba(255,255,255,.05);border-color:var(--line-strong)}
+        .row{display:flex;gap:10px;margin-top:12px}
+        .row > *{flex:1}
+        .divider{display:flex;align-items:center;gap:12px;color:var(--muted-2);font-size:13px;margin:18px 0}
+        .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+        .hidden{display:none !important}
+        .msg{margin-top:14px;font-size:14px;color:var(--danger);min-height:1em;line-height:1.5}
+        .banner{margin-top:16px;padding:14px 16px;border-radius:14px;font-size:14px;line-height:1.6;background:rgba(255,211,107,.1);border:1px solid rgba(255,211,107,.35);color:var(--warn)}
+
+        /* 房間畫面 */
+        .room-head{display:flex;align-items:center;justify-content:space-between}
+        .room-code{font-size:44px;font-weight:900;letter-spacing:.16em;color:var(--accent);line-height:1}
+        .copy{font-size:13px;padding:8px 12px;border-radius:999px;border:1px solid var(--line-strong);background:rgba(255,255,255,.04);cursor:pointer}
+        .players{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;text-align:center}
+        .player .name{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .player .state{font-size:13px;color:var(--muted);margin-top:4px}
+        .player .score{font-size:44px;font-weight:900;margin-top:6px}
+        .vs{color:var(--muted-2);font-weight:800}
+        .ok{color:var(--accent) !important}
+        .off{color:var(--danger) !important}
+        .status{text-align:center;font-size:18px;font-weight:700;margin-top:6px;line-height:1.5}
+        .hands{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+        .hand{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:20px;border:1px solid var(--line-strong);background:rgba(255,255,255,.05);cursor:pointer;font-size:44px;transition:transform .15s ease,border-color .2s ease,background .2s ease}
+        .hand span{font-size:14px;color:var(--muted);font-weight:600}
+        .hand:active{transform:scale(.94)}
+        .hand.picked{border-color:var(--accent);background:rgba(93,240,168,.14)}
+        .hand:disabled{cursor:not-allowed;opacity:.5}
+        .hand.picked:disabled{opacity:1}
+        .reveal{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;margin-top:8px}
+        .reveal .big{font-size:64px;line-height:1.1}
+        .reveal small{display:block;font-size:13px;color:var(--muted);margin-top:4px}
+        .result{text-align:center;font-size:30px;font-weight:900;margin-top:10px}
+        .win{color:var(--accent)} .lose{color:var(--danger)} .draw{color:var(--warn)}
+        .pop{animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+        @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+        .foot{text-align:center;color:var(--muted-2);font-size:12px;margin-top:28px}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="top">
+        <a href="index.html" class="brand"><b>▲</b>Meng-Jie</a>
+        <a href="index.html" class="back">← 回首頁</a>
+    </div>
+
+    <span class="eyebrow">Online Battle</span>
+    <h1>✊ 猜拳對決</h1>
+    <p class="sub">兩支手機輸入同一個房號，即時對戰。</p>
+
+    <div id="configBanner" class="banner hidden">
+        ⚠️ 還沒貼上 <b>firebaseConfig</b>，目前無法連線。請在 rps.html 搜尋「把你的 firebaseConfig 貼在這裡」。
+    </div>
+
+    <!-- 大廳：建立或加入房間 -->
+    <div id="lobby" class="card">
+        <label for="nameInput">你的暱稱</label>
+        <input id="nameInput" maxlength="12" placeholder="例如：小明" autocomplete="off">
+        <div class="row">
+            <button id="createBtn" class="btn btn-primary">建立房間</button>
+        </div>
+        <div class="divider">或輸入房號加入</div>
+        <input id="codeInput" class="code-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" autocomplete="off">
+        <div class="row">
+            <button id="joinBtn" class="btn btn-outline">加入房間</button>
+        </div>
+        <p id="lobbyMsg" class="msg"></p>
+    </div>
+
+    <!-- 房間：對戰畫面 -->
+    <div id="room" class="hidden">
+        <div class="card">
+            <div class="room-head">
+                <div>
+                    <label style="margin:0 0 6px">房號</label>
+                    <div id="roomCode" class="room-code">----</div>
+                </div>
+                <button id="copyBtn" class="copy">複製房號</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="players">
+                <div class="player">
+                    <div id="meName" class="name">你</div>
+                    <div id="meState" class="state">—</div>
+                    <div id="meScore" class="score">0</div>
+                </div>
+                <div class="vs">VS</div>
+                <div class="player">
+                    <div id="opName" class="name">等待對手…</div>
+                    <div id="opState" class="state">—</div>
+                    <div id="opScore" class="score">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="roundLabel" class="eyebrow" style="display:block;text-align:center">第 1 局</div>
+            <div id="status" class="status">等待對手加入…</div>
+
+            <!-- 出拳按鈕 -->
+            <div id="hands" class="hands">
+                <button class="hand" data-choice="rock">✊<span>石頭</span></button>
+                <button class="hand" data-choice="scissors">✌️<span>剪刀</span></button>
+                <button class="hand" data-choice="paper">🖐️<span>布</span></button>
+            </div>
+
+            <!-- 結果（雙方都出拳後才顯示） -->
+            <div id="resultBox" class="hidden">
+                <div class="reveal">
+                    <div><div id="meHand" class="big">✊</div><small>你</small></div>
+                    <div class="vs">VS</div>
+                    <div><div id="opHand" class="big">✊</div><small>對手</small></div>
+                </div>
+                <div id="resultText" class="result">平手</div>
+                <div class="row" style="margin-top:16px">
+                    <button id="againBtn" class="btn btn-primary">再來一局</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <button id="leaveBtn" class="btn btn-outline">離開房間</button>
+        </div>
+    </div>
+
+    <p class="foot">Firebase Realtime Database · 每間房 2 人</p>
+</div>
+
+<script>
+// ↓↓↓ 把你的 firebaseConfig 貼在這裡（整段換掉，要有 databaseURL） ↓↓↓
+const firebaseConfig = {
+    // 留空
+};
+// ↑↑↑ 把你的 firebaseConfig 貼在這裡 ↑↑↑
+
+const HANDS = { rock: '✊', scissors: '✌️', paper: '🖐️' };
+const BEATS = { rock: 'scissors', scissors: 'paper', paper: 'rock' }; // 左邊贏右邊
+
+const $ = (id) => document.getElementById(id);
+let db = null;
+let roomRef = null;   // rooms/房號
+let code = '';        // 房號
+let me = '';          // 'p1' 或 'p2'
+let op = '';          // 對手的位置
+let room = null;      // 最新的房間資料
+
+// ---------- 初始化 ----------
+const configReady = !!(firebaseConfig.apiKey && firebaseConfig.databaseURL);
+if (configReady) {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+} else {
+    $('configBanner').classList.remove('hidden');
+}
+try { $('nameInput').value = localStorage.getItem('rps-name') || ''; } catch (e) {}
+
+function getName() {
+    const name = $('nameInput').value.trim();
+    if (!name) { showLobbyMsg('請先輸入暱稱'); return ''; }
+    try { localStorage.setItem('rps-name', name); } catch (e) {}
+    return name;
+}
+function showLobbyMsg(text) { $('lobbyMsg').textContent = text; }
+function needConfig() {
+    if (configReady) return false;
+    showLobbyMsg('還沒貼上 firebaseConfig，無法連線。');
+    return true;
+}
+function newPlayer(name) { return { name, choice: '', online: true }; }
+
+// ---------- 建立房間 ----------
+$('createBtn').onclick = async () => {
+    if (needConfig()) return;
+    const name = getName(); if (!name) return;
+    setLobbyBusy(true);
+    try {
+        // 隨機 4 位數房號，撞號就重抽
+        for (let i = 0; i < 10; i++) {
+            const c = String(Math.floor(1000 + Math.random() * 9000));
+            const ref = db.ref('rooms/' + c);
+            const res = await ref.transaction((cur) => {
+                if (cur !== null) return; // 已有人用，放棄
+                return { round: 1, created: Date.now(), players: { p1: newPlayer(name) } };
+            });
+            if (res.committed) { enterRoom(c, 'p1'); return; }
+        }
+        showLobbyMsg('建立失敗，請再按一次。');
+    } catch (err) {
+        showLobbyMsg('連線錯誤：' + err.message);
+    } finally { setLobbyBusy(false); }
+};
+
+// ---------- 加入房間 ----------
+$('joinBtn').onclick = async () => {
+    if (needConfig()) return;
+    const name = getName(); if (!name) return;
+    const c = $('codeInput').value.trim();
+    if (!/^[0-9]{4}$/.test(c)) { showLobbyMsg('房號要是 4 位數字'); return; }
+    setLobbyBusy(true);
+    let slot = '';
+    let reason = '';
+    try {
+        const res = await db.ref('rooms/' + c).transaction((cur) => {
+            if (cur === null) { reason = 'none'; return null; } // 房間不存在（回傳 null 讓 Firebase 跟伺服器確認）
+            const p = cur.players || {};
+            // 找空位：沒人、或原本的人已離開
+            slot = (!p.p1 || !p.p1.online) ? 'p1' : (!p.p2 || !p.p2.online) ? 'p2' : '';
+            if (!slot) { reason = 'full'; return; }             // 房間已滿
+            reason = '';
+            p[slot] = newPlayer(name);
+            const other = slot === 'p1' ? 'p2' : 'p1';
+            if (p[other]) p[other].choice = '';
+            // 新對手加入：從第 1 局、0 比 0 重新開始
+            return { ...cur, players: p, round: 1, history: null };
+        });
+        if (res.committed && res.snapshot.exists()) enterRoom(c, slot);
+        else showLobbyMsg(reason === 'full' ? '房間已滿（每間最多 2 人）' : '找不到這個房號');
+    } catch (err) {
+        showLobbyMsg('連線錯誤：' + err.message);
+    } finally { setLobbyBusy(false); }
+};
+
+function setLobbyBusy(b) { $('createBtn').disabled = b; $('joinBtn').disabled = b; if (b) showLobbyMsg(''); }
+
+// ---------- 進入房間，開始監聽 ----------
+function enterRoom(c, slot) {
+    code = c; me = slot; op = slot === 'p1' ? 'p2' : 'p1';
+    roomRef = db.ref('rooms/' + code);
+    // 斷線（關掉分頁、網路斷）時自動標記離開
+    roomRef.child('players/' + me + '/online').onDisconnect().set(false);
+    roomRef.on('value', onRoom);
+    $('roomCode').textContent = code;
+    $('lobby').classList.add('hidden');
+    $('room').classList.remove('hidden');
+}
+
+function onRoom(snap) {
+    room = snap.val();
+    if (!room) { leaveRoom('房間已關閉'); return; }
+    const players = room.players || {};
+    const mine = players[me] || {};
+    const theirs = players[op];
+    const round = room.round || 1;
+
+    // 雙方都出拳 → 記錄這局（兩邊寫入的內容相同，重複寫也沒關係）
+    if (mine.choice && theirs && theirs.choice && !(room.history && room.history[round])) {
+        roomRef.child('history/' + round).set({ p1: players.p1.choice, p2: players.p2.choice });
+    }
+
+    // 比分：從每一局的紀錄算出來，兩邊結果一定一致
+    let myScore = 0, opScore = 0;
+    Object.values(room.history || {}).forEach((h) => {
+        const r = judge(h[me], h[op]);
+        if (r === 'win') myScore++; else if (r === 'lose') opScore++;
+    });
+
+    // 玩家資訊
+    $('meName').textContent = mine.name || '你';
+    $('meScore').textContent = myScore;
+    $('opScore').textContent = opScore;
+    $('roundLabel').textContent = '第 ' + round + ' 局';
+
+    const opHere = theirs && theirs.online;
+    $('opName').textContent = theirs ? theirs.name : '等待對手…';
+    setState('meState', mine.choice ? '已出拳 ✓' : '尚未出拳', mine.choice ? 'ok' : '');
+    if (!theirs) setState('opState', '尚未加入', '');
+    else if (!theirs.online) setState('opState', '對手已離開', 'off');
+    else setState('opState', theirs.choice ? '已出拳 ✓' : '思考中…', theirs.choice ? 'ok' : '');
+
+    const bothPicked = mine.choice && theirs && theirs.choice;
+    const hands = document.querySelectorAll('.hand');
+    hands.forEach((b) => {
+        b.classList.toggle('picked', b.dataset.choice === mine.choice);
+        b.disabled = !opHere || !!mine.choice;
+    });
+
+    if (bothPicked) {
+        // 公布結果
+        $('hands').classList.add('hidden');
+        $('resultBox').classList.remove('hidden');
+        $('meHand').textContent = HANDS[mine.choice];
+        $('opHand').textContent = HANDS[theirs.choice];
+        const r = judge(mine.choice, theirs.choice);
+        const el = $('resultText');
+        el.textContent = r === 'win' ? '你贏了！🎉' : r === 'lose' ? '你輸了 😵' : '平手 🤝';
+        el.className = 'result pop ' + r;
+        $('status').textContent = opHere ? '本局結束' : '對手已離開';
+        $('status').className = 'status' + (opHere ? '' : ' off');
+        $('againBtn').disabled = !opHere;
+    } else {
+        $('hands').classList.remove('hidden');
+        $('resultBox').classList.add('hidden');
+        let text, cls = '';
+        if (!theirs) text = '等待對手加入…把房號給對方';
+        else if (!theirs.online) { text = '對手已離開'; cls = ' off'; }
+        else if (!mine.choice) text = '請出拳！';
+        else text = '等對手出拳…（對方看不到你出什麼）';
+        $('status').textContent = text;
+        $('status').className = 'status' + cls;
+    }
+}
+
+function setState(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'state' + (cls ? ' ' + cls : ''); }
+function judge(a, b) { if (!a || !b) return ''; if (a === b) return 'draw'; return BEATS[a] === b ? 'win' : 'lose'; }
+
+// ---------- 出拳 ----------
+document.querySelectorAll('.hand').forEach((btn) => {
+    btn.onclick = () => {
+        if (!roomRef || btn.disabled) return;
+        roomRef.child('players/' + me + '/choice').set(btn.dataset.choice);
+    };
+});
+
+// ---------- 再來一局 ----------
+$('againBtn').onclick = () => {
+    if (!roomRef || !room) return;
+    const round = room.round || 1;
+    roomRef.transaction((cur) => {
+        if (!cur) return;
+        if ((cur.round || 1) !== round) return cur; // 對方已經按過了
+        cur.round = round + 1;
+        Object.values(cur.players || {}).forEach((p) => { p.choice = ''; });
+        return cur;
+    });
+};
+
+// ---------- 離開 ----------
+$('leaveBtn').onclick = async () => {
+    if (roomRef) {
+        const other = room && room.players && room.players[op];
+        if (other && other.online) await roomRef.child('players/' + me + '/online').set(false);
+        else await roomRef.remove(); // 兩人都走了就把房間刪掉
+    }
+    leaveRoom('');
+};
+
+function leaveRoom(text) {
+    if (roomRef) {
+        roomRef.off('value', onRoom);
+        roomRef.child('players/' + me + '/online').onDisconnect().cancel();
+    }
+    roomRef = null; room = null; code = ''; me = ''; op = '';
+    $('room').classList.add('hidden');
+    $('lobby').classList.remove('hidden');
+    showLobbyMsg(text);
+}
+
+// ---------- 小工具 ----------
+$('copyBtn').onclick = async () => {
+    try { await navigator.clipboard.writeText(code); $('copyBtn').textContent = '已複製 ✓'; }
+    catch (e) { $('copyBtn').textContent = code; }
+    setTimeout(() => { $('copyBtn').textContent = '複製房號'; }, 1500);
+};
+$('codeInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); });
+$('codeInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('joinBtn').click(); });
+// 網址帶房號（rps.html?room=1234）時自動填入
+const qsRoom = new URLSearchParams(location.search).get('room');
+if (qsRoom && /^[0-9]{4}$/.test(qsRoom)) $('codeInput').value = qsRoom;
+</script>
+</body>
+</html>
