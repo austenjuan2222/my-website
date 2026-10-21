@@ -2,117 +2,186 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>極限街頭對決：Cyber Fighter - 小遊戲</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="games.css">
     <style>
-        body {
-            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
-            min-height: 100vh;
-            touch-action: none;
-            user-select: none;
+        body{touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden;
+             display:flex;flex-direction:column;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
+        .shell{position:relative;z-index:1;width:100%;max-width:1024px;display:flex;flex-direction:column;gap:10px}
+
+        /* 標題列 */
+        .stage-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:4px 6px 0}
+        .stage-head h1{font-size:clamp(18px,2.6vw,24px);font-weight:900;letter-spacing:-.01em;margin-top:2px}
+        .stage-head h1 small{font-size:.62em;font-weight:600;color:var(--muted);margin-left:8px;letter-spacing:0}
+        .stage-tools{display:flex;align-items:center;gap:12px}
+
+        /* 遊戲舞台 */
+        .stage{position:relative;width:100%;aspect-ratio:16/9;max-height:55vh;margin:0 auto;border-radius:var(--radius-lg);overflow:hidden;
+               border:1px solid var(--line-strong);box-shadow:0 30px 80px -30px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.04);
+               background:
+                 radial-gradient(60% 70% at 50% 100%, rgba(93,240,168,.10), transparent 70%),
+                 linear-gradient(180deg, rgba(16,24,48,.85) 0%, rgba(8,12,28,.92) 100%)}
+        .stage canvas{display:block;width:100%;height:100%}
+
+        /* 疊層（開始／結束／排行榜） */
+        .layer{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px;text-align:center;
+               background:rgba(4,6,15,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-y:auto}
+        #overlay{z-index:30}
+        #leaderboardModal{z-index:40;background:rgba(4,6,15,.9)}
+        .ov-title{font-size:clamp(30px,5.4vw,56px);font-weight:900;letter-spacing:.04em;line-height:1}
+        .ov-title.idle{background:linear-gradient(180deg,#fff,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+        .ov-title.win{color:var(--warn);text-shadow:0 0 40px rgba(255,211,107,.35)}
+        .ov-title.lose{color:var(--p2);text-shadow:0 0 40px rgba(255,122,144,.3)}
+        .guide{padding:16px 18px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line);display:grid;gap:8px;justify-items:center}
+        .guide-label{font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--muted-2);text-transform:uppercase}
+        .guide-row{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+        .guide-tip{font-size:12.5px;color:var(--warn);margin-top:2px}
+        .upload{display:grid;gap:10px;justify-items:center;padding:14px 16px;border-radius:var(--radius);background:rgba(93,240,168,.06);border:1px solid rgba(93,240,168,.2)}
+        .upload p{font-size:13.5px;color:var(--muted)}
+        .upload p b{color:var(--ink);font-size:17px}
+        .upload-row{display:flex;gap:8px}
+        .field{width:160px;padding:10px 14px;border-radius:999px;border:1px solid var(--line-strong);background:rgba(255,255,255,.05);font-size:14px;font-weight:600;text-align:center;outline:none;transition:border-color .2s ease}
+        .field::placeholder{color:var(--muted-2)}
+        .field:focus{border-color:var(--accent)}
+        #submitScoreBtn.is-done{color:var(--muted);background:rgba(255,255,255,.06);box-shadow:none}
+
+        /* 排行榜 */
+        .lb-title{font-size:clamp(22px,3.4vw,30px);font-weight:900}
+        .lb{width:100%;max-width:440px;max-height:60%;display:flex;flex-direction:column;border-radius:var(--radius);overflow:hidden;background:var(--glass-2);border:1px solid var(--line)}
+        .lb table{width:100%;border-collapse:collapse;font-size:14px;text-align:left;color:var(--muted)}
+        .lb thead th{padding:11px 16px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);border-bottom:1px solid var(--line)}
+        .lb .scroll{overflow-y:auto;flex:1}
+        .lb .scroll::-webkit-scrollbar{width:6px}
+        .lb .scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:10px}
+        .lb td{padding:11px 16px;border-bottom:1px solid var(--line)}
+        .lb tr.top td{background:rgba(255,211,107,.06)}
+        .lb .rank{width:64px;font-size:17px;font-weight:800}
+        .lb .pname{color:var(--ink);font-weight:700}
+        .lb .score{text-align:right;font-weight:800;font-size:16px;color:var(--accent);font-variant-numeric:tabular-nums}
+        .lb .msg{text-align:center;padding:22px 16px}
+        .lb .msg.err{color:var(--danger)}
+        .loading{animation:pulse 1.2s ease-in-out infinite}
+        @keyframes pulse{50%{opacity:.45}}
+        .lb table{table-layout:fixed}.th-rank{width:64px}.th-score,.lb .score{width:110px;text-align:right}
+
+        /* 觸控／滑鼠操作區（鍵帽造型） */
+        .pad{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .pad-group{display:flex;gap:8px}
+        .pad .key{flex:1;min-height:52px;font-size:14px;border-radius:16px;cursor:pointer;transition:transform .1s var(--ease-out),background-color .15s ease,border-color .15s ease}
+        .pad .key:active,.pad .key.is-down{transform:scale(.96) translateY(1px);box-shadow:inset 0 -1px 0 rgba(0,0,0,.35);border-color:var(--accent)}
+        .pad-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+        .key.k-shield{flex:1.3}
+
+        @media (max-width:720px){
+          .stage-head h1 small{display:none}
+          .pad{grid-template-columns:1fr}
         }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+        /* 疊層內容太高時可在疊層內捲動，且不會把上緣切掉 */
+        .layer{justify-content:safe center;touch-action:pan-y}
+        @media (max-width:720px){
+          /* 手機舞台很矮：鍵盤說明改由下方按鈕代替，只留提示 */
+          .layer{gap:10px;padding:12px}
+          .guide{padding:8px 12px;background:none;border:0}
+          .guide-label,.guide-row{display:none}
+          .ov-title{font-size:28px}
+          .gbtn-lg{min-height:46px;padding:11px 26px;font-size:16px}
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 10px; }
+        @media (max-width:520px){
+          .stage-head .eyebrow{display:none}
+        }
     </style>
 </head>
-<body class="text-white font-sans antialiased flex flex-col items-center justify-between min-h-screen p-2 md:p-4 overflow-hidden">
-
-    <header class="w-full max-w-5xl flex items-center justify-between px-4 py-2 glass-panel rounded-2xl shadow-lg z-20">
-        <div class="flex space-x-2">
-            <a href="index.html" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold text-sm rounded-xl transition flex items-center shadow">
-                <span>← 回首頁</span>
-            </a>
-            <button id="btnLeaderboard" class="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 border border-cyan-500 text-white font-bold text-sm rounded-xl transition shadow">
-                🏆 排行榜
-            </button>
-        </div>
-        <div class="text-center hidden md:block">
-            <h1 class="text-base md:text-xl font-black tracking-widest text-cyan-400">極限街頭對決 (護盾吸血版)</h1>
-        </div>
-        <div class="text-right text-xs md:text-sm font-semibold text-cyan-300">
-            最高連勝: <span id="bestStreak" class="text-white text-base">0</span> 連勝
+<body>
+<div class="shell">
+    <!-- 共用頂列 -->
+    <header class="gbar">
+        <a href="index.html" class="gbar-brand" title="回首頁"><b>▲</b><span>Meng-Jie</span></a>
+        <nav class="gswitch" aria-label="切換遊戲">
+            <a href="game.html" aria-current="page"><span class="gs-icon">🥊</span>格鬥對決</a>
+            <a href="rps.html"><span class="gs-icon">✊</span>猜拳對決</a>
+        </nav>
+        <div class="gbar-right">
+            <button id="btnLeaderboard" class="gbtn gbtn-ghost gbtn-sm">🏆 排行榜</button>
         </div>
     </header>
 
-    <main class="relative w-full max-w-5xl aspect-[16/9] max-h-[55vh] glass-panel rounded-3xl overflow-hidden shadow-2xl border border-cyan-500/30 flex items-center justify-center my-2">
-        <canvas id="gameCanvas" width="1280" height="720" class="w-full h-full block cursor-default"></canvas>
+    <div class="stage-head">
+        <div>
+            <span class="eyebrow">Cyber Fighter</span>
+            <h1>極限街頭對決<small>護盾吸血版</small></h1>
+        </div>
+        <div class="stage-tools">
+            <span class="stat">最高連勝 <b id="bestStreak">0</b></span>
+        </div>
+    </div>
 
-        <div id="overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-30">
-            <h2 id="overlayTitle" class="text-3xl md:text-5xl font-black mb-3 tracking-wider text-cyan-400">CYBER FIGHTER</h2>
-            
-            <div class="bg-slate-800/80 p-5 rounded-2xl inline-block text-left mb-6 border border-cyan-500/50 shadow-lg">
-                <p class="text-cyan-300 font-bold mb-3 text-center text-sm">【 操作指引 】</p>
-                <div class="flex justify-center space-x-2 mb-2">
-                    <span class="px-4 py-2 bg-cyan-600 rounded-lg text-white font-black shadow-md border-b-4 border-cyan-800">Q 氣功</span>
-                    <span class="px-4 py-2 bg-amber-600 rounded-lg text-white font-black shadow-md border-b-4 border-amber-800">W 普攻</span>
+    <main class="stage">
+        <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+        <div id="overlay" class="layer">
+            <h2 id="overlayTitle" class="ov-title idle">CYBER FIGHTER</h2>
+
+            <div class="guide">
+                <p class="guide-label">操作指引</p>
+                <div class="guide-row">
+                    <span class="key t-accent"><kbd>Q</kbd>氣功</span>
+                    <span class="key t-warn"><kbd>W</kbd>普攻</span>
+                    <span class="key t-info"><kbd>S</kbd>護盾(無敵)</span>
                 </div>
-                <div class="flex justify-center space-x-2 mb-2">
-                    <span class="px-4 py-2 bg-slate-700 rounded-lg text-white font-bold shadow-md border-b-4 border-slate-900">A 左移</span>
-                    <span class="px-4 py-2 bg-blue-600 rounded-lg text-white font-bold shadow-md border-b-4 border-blue-800">S 護盾(無敵)</span>
-                    <span class="px-4 py-2 bg-slate-700 rounded-lg text-white font-bold shadow-md border-b-4 border-slate-900">D 右移</span>
+                <div class="guide-row">
+                    <span class="key"><kbd>A</kbd>左移</span>
+                    <span class="key"><kbd>空白鍵</kbd>跳躍</span>
+                    <span class="key"><kbd>D</kbd>右移</span>
                 </div>
-                <div class="flex justify-center">
-                    <span class="px-12 py-2 bg-slate-700 rounded-lg text-white font-bold shadow-md border-b-4 border-slate-900">空白鍵 (跳躍)</span>
-                </div>
-                <p class="text-xs text-amber-300 mt-3 text-center font-bold tracking-wide">💡 新機制：成功攻擊到對手，可恢復 5 點黃色護盾值！</p>
+                <p class="guide-tip">💡 成功攻擊到對手，可恢復 5 點黃色護盾值！</p>
             </div>
 
-            <div id="scoreUploadSection" class="mb-6 flex flex-col items-center space-y-3 hidden bg-slate-900/50 p-4 rounded-2xl border border-cyan-900/50">
-                <p class="text-cyan-300 text-sm font-bold">上傳你的最高連勝紀錄：<span id="uploadScoreDisplay" class="text-white text-lg">0</span></p>
-                <div class="flex space-x-2">
-                    <input type="text" id="playerName" maxlength="10" placeholder="輸入玩家暱稱" class="px-3 py-2 rounded-xl bg-slate-800 text-white font-bold outline-none border-2 border-cyan-500 focus:border-cyan-300 w-40 text-center text-sm shadow-inner placeholder-slate-500">
-                    <button id="submitScoreBtn" class="px-5 py-2 bg-green-500 hover:bg-green-400 text-slate-950 font-black rounded-xl shadow transition text-sm">上傳</button>
+            <div id="scoreUploadSection" class="upload hidden">
+                <p>上傳你的最高連勝紀錄：<b id="uploadScoreDisplay" class="num">0</b></p>
+                <div class="upload-row">
+                    <input type="text" id="playerName" maxlength="10" placeholder="輸入玩家暱稱" class="field">
+                    <button id="submitScoreBtn" class="gbtn gbtn-primary gbtn-sm">上傳</button>
                 </div>
             </div>
 
-            <button id="startBtn" class="px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-lg rounded-2xl shadow-lg transition transform hover:scale-105">
-                進入對決
-            </button>
+            <button id="startBtn" class="gbtn gbtn-primary gbtn-lg">進入對決</button>
         </div>
 
-        <div id="leaderboardModal" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 text-center z-40">
-            <h2 class="text-2xl md:text-3xl font-black mb-4 text-amber-400 drop-shadow-md">🏆 頂尖對決排行榜 🏆</h2>
-            <div class="w-full max-w-md bg-slate-800 rounded-xl shadow-2xl border border-cyan-500/30 overflow-hidden mb-6 flex flex-col max-h-[60%]">
-                <table class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-900 text-cyan-300 shadow-md">
-                        <tr>
-                            <th class="px-4 py-3 font-black">名次</th>
-                            <th class="px-4 py-3 font-black">神手暱稱</th>
-                            <th class="px-4 py-3 text-right font-black">連勝次數</th>
-                        </tr>
-                    </thead>
+        <div id="leaderboardModal" class="layer hidden">
+            <h2 class="lb-title">🏆 頂尖對決排行榜</h2>
+            <div class="lb">
+                <table>
+                    <thead><tr><th class="th-rank">名次</th><th>神手暱稱</th><th class="th-score">連勝次數</th></tr></thead>
                 </table>
-                <div class="overflow-y-auto custom-scrollbar flex-1">
-                    <table class="w-full text-left text-sm text-slate-300">
+                <div class="scroll">
+                    <table>
                         <tbody id="leaderboardBody">
-                            <tr><td colspan="3" class="text-center py-6 text-cyan-400 animate-pulse">連線至伺服器讀取中...</td></tr>
+                            <tr><td colspan="3" class="msg loading">連線至伺服器讀取中...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-            <button id="closeLeaderboardBtn" class="px-8 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition shadow-lg border border-slate-500">關閉</button>
+            <button id="closeLeaderboardBtn" class="gbtn gbtn-ghost gbtn-md">關閉</button>
         </div>
     </main>
 
-    <footer class="w-full max-w-5xl grid grid-cols-2 gap-3 px-2 pb-2 z-20">
-        <div class="flex items-center space-x-2">
-            <button id="btnLeft" class="flex-1 py-3 bg-slate-800 border border-slate-600 rounded-2xl font-bold text-sm active:bg-cyan-600 shadow">A ◀ 左</button>
-            <button id="btnRight" class="flex-1 py-3 bg-slate-800 border border-slate-600 rounded-2xl font-bold text-sm active:bg-cyan-600 shadow">右 ▶ D</button>
-            <button id="btnShield" class="px-4 py-3 bg-blue-900 border border-blue-500 rounded-2xl font-bold text-sm active:bg-blue-600 shadow text-cyan-200">S 護盾 (無敵)</button>
+    <footer class="pad">
+        <div class="pad-group">
+            <button id="btnLeft" class="key"><kbd>A</kbd>◀ 左</button>
+            <button id="btnRight" class="key">右 ▶<kbd>D</kbd></button>
+            <button id="btnShield" class="key t-info k-shield"><kbd>S</kbd>護盾</button>
         </div>
-        <div class="grid grid-cols-3 gap-1.5">
-            <button id="btnJump" class="bg-slate-800 border border-slate-600 rounded-2xl font-bold text-sm active:bg-cyan-600 shadow">跳躍</button>
-            <button id="btnW" class="bg-amber-600 border border-amber-400 rounded-2xl font-black text-sm active:bg-amber-500 shadow">W 普攻</button>
-            <button id="btnQ" class="bg-cyan-600 border border-cyan-400 rounded-2xl font-black text-sm active:bg-cyan-500 shadow">Q 氣功</button>
+        <div class="pad-actions">
+            <button id="btnJump" class="key"><kbd>␣</kbd>跳躍</button>
+            <button id="btnW" class="key t-warn"><kbd>W</kbd>普攻</button>
+            <button id="btnQ" class="key t-accent"><kbd>Q</kbd>氣功</button>
         </div>
     </footer>
+</div>
 
     <script>
         // 💡 加入強制等待網頁讀取完成的防呆機制
@@ -150,9 +219,7 @@
                 .then(data => {
                     if(data.status === 'success') {
                         btn.innerText = '✅ 已上傳';
-                        btn.classList.replace('bg-green-500', 'bg-slate-600');
-                        btn.classList.replace('hover:bg-green-400', 'hover:bg-slate-600');
-                        btn.classList.replace('text-slate-950', 'text-white');
+                        btn.classList.add('is-done');
                         alert('成績上傳成功，世界將記得你的名號！');
                     } else {
                         alert('上傳失敗：' + data.message);
@@ -167,14 +234,13 @@
             function resetSubmitButton(btn) {
                 btn.innerText = '上傳';
                 btn.disabled = false;
-                btn.classList.remove('bg-slate-600', 'text-white');
-                btn.classList.add('bg-green-500', 'hover:bg-green-400', 'text-slate-950');
+                btn.classList.remove('is-done');
             }
 
             document.getElementById('btnLeaderboard').addEventListener('click', () => {
                 document.getElementById('leaderboardModal').classList.remove('hidden');
                 const tbody = document.getElementById('leaderboardBody');
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-cyan-400 animate-pulse">連線至伺服器讀取中...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="msg loading">連線至伺服器讀取中...</td></tr>';
 
                 fetch(API_URL + "?action=getTop10")
                 .then(res => res.json())
@@ -182,25 +248,25 @@
                     if(data.status === 'success') {
                         tbody.innerHTML = '';
                         if(data.data.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-400">目前尚無挑戰者，搶下第一吧！</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="3" class="msg">目前尚無挑戰者，搶下第一吧！</td></tr>';
                             return;
                         }
                         data.data.forEach((row, index) => {
-                            let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span class="text-slate-400 pl-1">${index + 1}</span>`;
-                            let rowClass = index === 0 ? 'bg-amber-900/30' : index % 2 === 0 ? 'bg-slate-800/50' : 'bg-transparent';
+                            let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span class="num">${index + 1}</span>`;
+                            let rowClass = index === 0 ? 'top' : '';
                             
                             tbody.innerHTML += `
-                                <tr class="border-b border-slate-700/50 ${rowClass} transition hover:bg-cyan-900/30">
-                                    <td class="px-4 py-3 font-black text-lg">${medal}</td>
-                                    <td class="px-4 py-3 text-white font-bold tracking-wide">${row.name}</td>
-                                    <td class="px-4 py-3 text-right font-mono font-black text-cyan-400 text-lg">${row.score}</td>
+                                <tr class="${rowClass}">
+                                    <td class="rank">${medal}</td>
+                                    <td class="pname">${row.name}</td>
+                                    <td class="score">${row.score}</td>
                                 </tr>
                             `;
                         });
                     }
                 })
                 .catch(err => {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-red-400">讀取失敗，請確認 API 網址是否正確</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" class="msg err">讀取失敗，請確認 API 網址是否正確</td></tr>';
                 });
             });
 
@@ -265,6 +331,9 @@
             function bindTouch(id, stateKey) {
                 const el = document.getElementById(id);
                 if (!el) return;
+                // 按下時加上 is-down，讓觸控也有按壓回饋（touchstart 擋掉預設行為後 :active 不一定會觸發）
+                ['touchstart', 'mousedown'].forEach(t => el.addEventListener(t, () => el.classList.add('is-down')));
+                ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(t => el.addEventListener(t, () => el.classList.remove('is-down')));
                 el.addEventListener('touchstart', e => { e.preventDefault(); touchState[stateKey] = true; if(gameState==='PLAYING' && ['w','q'].includes(stateKey)) triggerTouchSkill(stateKey); });
                 el.addEventListener('touchend', e => { e.preventDefault(); touchState[stateKey] = false; });
                 el.addEventListener('mousedown', e => { touchState[stateKey] = true; if(gameState==='PLAYING' && ['w','q'].includes(stateKey)) triggerTouchSkill(stateKey); });
@@ -330,10 +399,10 @@
                     if (this.isShielding) {
                         ctx.beginPath();
                         ctx.arc(0, 0, 75, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+                        ctx.fillStyle = 'rgba(124, 199, 255, 0.22)';
                         ctx.fill();
                         ctx.lineWidth = 4;
-                        ctx.strokeStyle = '#38bdf8';
+                        ctx.strokeStyle = '#7cc7ff';
                         ctx.stroke();
                     }
 
@@ -346,7 +415,7 @@
 
                     ctx.beginPath();
                     ctx.arc(0, -42, 18, 0, Math.PI * 2);
-                    ctx.fillStyle = '#f8fafc';
+                    ctx.fillStyle = '#f3f6ff';
                     ctx.fill();
 
                     ctx.fillStyle = this.color;
@@ -406,8 +475,8 @@
             let player, ai, projectiles;
 
             function initGame() {
-                player = new Fighter(300, 510, '#06b6d4', false);
-                ai = new Fighter(920, 510, '#ec4899', true);
+                player = new Fighter(300, 510, '#5df0a8', false);
+                ai = new Fighter(920, 510, '#ff7a90', true);
                 projectiles = [];
             }
 
@@ -428,7 +497,7 @@
                 player.actionState = 'attack';
                 player.actionFrame = 15;
                 playSound('skill');
-                projectiles.push(new Projectile(player.x + 30, player.y + 30, 6, -2, '#22d3ee', 'player'));
+                projectiles.push(new Projectile(player.x + 30, player.y + 30, 6, -2, '#5df0a8', 'player'));
             }
 
             function applyDamage(target, dmg, attacker) {
@@ -500,7 +569,7 @@
                         ai.energy -= 30;
                         ai.attackCooldown = 45;
                         playSound('skill');
-                        projectiles.push(new Projectile(ai.x, ai.y + 30, 6 * dir, -2, '#f472b6', 'ai'));
+                        projectiles.push(new Projectile(ai.x, ai.y + 30, 6 * dir, -2, '#ff9fb0', 'ai'));
                     }
                 }
             }
@@ -543,10 +612,10 @@
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                ctx.fillStyle = '#0f172a';
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.55)';
                 ctx.fillRect(0, 620, canvas.width, 100);
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgba(93, 240, 168, 0.55)';
+                ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(0, 620); ctx.lineTo(canvas.width, 620); ctx.stroke();
 
                 player.draw();
@@ -554,41 +623,41 @@
                 projectiles.forEach(p => p.draw());
                 
                 // 玩家血條介面
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.75)';
                 ctx.fillRect(50, 30, 350, 20);
-                ctx.fillStyle = '#06b6d4';
+                ctx.fillStyle = '#5df0a8';
                 ctx.fillRect(50, 30, 350 * (player.hp / player.maxHp), 20);
-                ctx.strokeStyle = '#fff'; ctx.strokeRect(50, 30, 350, 20);
+                ctx.strokeStyle = 'rgba(243, 246, 255, 0.35)'; ctx.strokeRect(50, 30, 350, 20);
 
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.75)';
                 ctx.fillRect(50, 55, 350, 10);
-                ctx.fillStyle = '#fbbf24';
+                ctx.fillStyle = '#ffd36b';
                 ctx.fillRect(50, 55, 350 * (player.shieldHp / player.maxShieldHp), 10);
-                ctx.strokeStyle = '#fbbf24'; ctx.strokeRect(50, 55, 350, 10);
+                ctx.strokeStyle = '#ffd36b'; ctx.strokeRect(50, 55, 350, 10);
                 
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.75)';
                 ctx.fillRect(50, 70, 200, 10);
-                ctx.fillStyle = '#22d3ee';
+                ctx.fillStyle = '#7cc7ff';
                 ctx.fillRect(50, 70, 200 * (player.energy / player.maxEnergy), 10);
 
                 // 電腦血條介面
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.75)';
                 ctx.fillRect(canvas.width - 400, 30, 350, 20);
-                ctx.fillStyle = '#ec4899';
+                ctx.fillStyle = '#ff7a90';
                 const aiHpW = 350 * (ai.hp / ai.maxHp);
                 ctx.fillRect(canvas.width - 50 - aiHpW, 30, aiHpW, 20);
-                ctx.strokeStyle = '#fff'; ctx.strokeRect(canvas.width - 400, 30, 350, 20);
+                ctx.strokeStyle = 'rgba(243, 246, 255, 0.35)'; ctx.strokeRect(canvas.width - 400, 30, 350, 20);
                 
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.75)';
                 ctx.fillRect(canvas.width - 400, 55, 350, 10);
-                ctx.fillStyle = '#fbbf24';
+                ctx.fillStyle = '#ffd36b';
                 const aiShieldW = 350 * (ai.shieldHp / ai.maxShieldHp);
                 ctx.fillRect(canvas.width - 50 - aiShieldW, 55, aiShieldW, 10);
-                ctx.strokeStyle = '#fbbf24'; ctx.strokeRect(canvas.width - 400, 55, 350, 10);
+                ctx.strokeStyle = '#ffd36b'; ctx.strokeRect(canvas.width - 400, 55, 350, 10);
 
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.75)';
                 ctx.fillRect(canvas.width - 250, 70, 200, 10);
-                ctx.fillStyle = '#f472b6';
+                ctx.fillStyle = '#ff9fb0';
                 const aiEnW = 200 * (ai.energy / ai.maxEnergy);
                 ctx.fillRect(canvas.width - 50 - aiEnW, 70, aiEnW, 10);
 
@@ -605,14 +674,14 @@
 
                 if (result === 'VICTORY') {
                     title.innerText = '勝利！ VICTORY';
-                    title.className = 'text-3xl md:text-5xl font-black mb-3 tracking-wider text-amber-400 drop-shadow-lg';
+                    title.className = 'ov-title win';
                     bestStreak++;
                     try { localStorage.setItem('cyber_fighter_streak', bestStreak); } catch(e){}
                     document.getElementById('bestStreak').innerText = bestStreak;
                     document.getElementById('startBtn').innerText = '迎戰下一位對手';
                 } else {
                     title.innerText = '敗北... DEFEAT';
-                    title.className = 'text-3xl md:text-5xl font-black mb-3 tracking-wider text-red-500 drop-shadow-lg';
+                    title.className = 'ov-title lose';
                     document.getElementById('startBtn').innerText = '重新挑戰';
                 }
 
