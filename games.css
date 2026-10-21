@@ -1,0 +1,77 @@
+/* 遊戲頁共用樣式：沿用首頁色票與字體，但用「遊戲機台」語彙（頂列切換器、鍵帽按鈕、點陣背景） */
+:root{
+  --bg:#04060f; --ink:#f3f6ff; --muted:#9aa6c4; --muted-2:#6b7796;
+  --line:rgba(150,175,230,.12); --line-strong:rgba(150,175,230,.22);
+  --accent:#5df0a8; --accent-2:#2fd38a; --accent-ink:#032018;
+  --p2:#ff7a90; --warn:#ffd36b; --info:#7cc7ff; --danger:#ff7a90;
+  --glass:rgba(12,18,38,.55); --glass-2:rgba(16,24,48,.72);
+  --radius:18px; --radius-lg:26px;
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --font:'Inter','Noto Sans TC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit;color:inherit}
+.hidden{display:none !important}
+
+body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(70% 50% at 50% -8%, rgba(93,240,168,.11), transparent 62%),
+    radial-gradient(60% 55% at 100% 105%, rgba(124,92,255,.16), transparent 60%),
+    radial-gradient(50% 45% at 0% 100%, rgba(255,122,144,.07), transparent 60%),
+    var(--bg) fixed}
+/* 淡淡的點陣格線，做出「機台螢幕」的質感 */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(rgba(150,175,230,.14) 1px, transparent 1px);background-size:22px 22px;
+  -webkit-mask-image:radial-gradient(80% 70% at 50% 40%, #000 30%, transparent 85%);mask-image:radial-gradient(80% 70% at 50% 40%, #000 30%, transparent 85%)}
+
+/* ===== 共用頂列：品牌 + 遊戲切換器 + 右側欄位 ===== */
+.gbar{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:8px 8px 8px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--line);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.gbar-brand{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;letter-spacing:.14em;white-space:nowrap}
+.gbar-brand b{color:var(--accent);font-size:12px}
+.gbar-right{display:flex;align-items:center;gap:8px}
+.gswitch{display:flex;padding:3px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
+.gswitch a{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap;transition:color .2s ease,background-color .2s ease}
+.gswitch a[aria-current="page"]{color:var(--ink);background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px var(--line-strong)}
+@media (hover:hover) and (pointer:fine){ .gswitch a:not([aria-current]):hover{color:var(--ink)} }
+
+/* ===== 按鈕 ===== */
+.gbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;border-radius:999px;border:1px solid transparent;cursor:pointer;white-space:nowrap;
+  transition:transform .16s var(--ease-out),background-color .2s ease,border-color .2s ease,box-shadow .2s ease,opacity .2s ease}
+.gbtn:active{transform:scale(.97)}
+.gbtn:disabled{opacity:.45;cursor:not-allowed}
+.gbtn-sm{font-size:13.5px;padding:8px 14px}
+.gbtn-md{font-size:15px;padding:12px 22px}
+.gbtn-lg{font-size:17px;padding:14px 30px;min-height:54px}
+.gbtn-primary{color:var(--accent-ink);background:linear-gradient(180deg,var(--accent),var(--accent-2));box-shadow:0 10px 30px -10px rgba(93,240,168,.6),inset 0 1px 0 rgba(255,255,255,.4)}
+.gbtn-ghost{background:rgba(255,255,255,.05);border-color:var(--line-strong)}
+@media (hover:hover) and (pointer:fine){
+  .gbtn-primary:not(:disabled):hover{box-shadow:0 14px 36px -10px rgba(93,240,168,.8),inset 0 1px 0 rgba(255,255,255,.4)}
+  .gbtn-ghost:not(:disabled):hover{background:rgba(255,255,255,.1)}
+}
+
+/* ===== 小元件 ===== */
+.eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.stat{display:inline-flex;align-items:baseline;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.stat b{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+/* 鍵帽：用在操作說明與觸控按鈕 */
+.key{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:34px;padding:7px 12px;border-radius:10px;font-size:13px;font-weight:700;color:var(--ink);
+  background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:1px solid var(--line-strong);box-shadow:inset 0 -3px 0 rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.04)}
+.key kbd{font-family:inherit;font-size:11px;font-weight:800;padding:1px 6px;border-radius:5px;background:rgba(0,0,0,.35);color:var(--muted)}
+.key.t-accent{border-color:rgba(93,240,168,.45);background:linear-gradient(180deg,rgba(93,240,168,.22),rgba(93,240,168,.08))}
+.key.t-accent kbd{color:var(--accent)}
+.key.t-warn{border-color:rgba(255,211,107,.45);background:linear-gradient(180deg,rgba(255,211,107,.2),rgba(255,211,107,.06))}
+.key.t-warn kbd{color:var(--warn)}
+.key.t-info{border-color:rgba(124,199,255,.45);background:linear-gradient(180deg,rgba(124,199,255,.2),rgba(124,199,255,.06))}
+.key.t-info kbd{color:var(--info)}
+
+@media (max-width:600px){
+  .gbar{padding:6px 6px 6px 12px}
+  .gbar-brand span{display:none}
+  .gswitch a{padding:7px 11px;font-size:13px}
+}
+@media (max-width:400px){ .gswitch a .gs-icon{display:none} }
+@media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important;animation-duration:.01ms !important} }
