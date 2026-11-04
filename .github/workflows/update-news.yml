@@ -1,0 +1,52 @@
+name: 更新最新消息
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # UTC 00:00 = 台灣時間早上 8 點
+  workflow_dispatch:       # 讓你可以手動按 Run workflow
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      RSS_URL: 'https://www.google.com/alerts/feeds/09861700034157042233/6074583596596297488'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 抓 Google 快訊（法說會）存成 news.json
+        run: |
+          node -e '
+          const clean = s => s.replace(/<!\[CDATA\[|\]\]>/g, "")
+            .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"")
+            .replace(/&#39;/g, "\x27").replace(/&amp;/g, "&").replace(/<[^>]+>/g, "").trim();
+          fetch(process.env.RSS_URL).then(r => r.text()).then(xml => {
+            const items = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].slice(0, 10).map(m => {
+              const e = m[1];
+              const get = re => (e.match(re) || [, ""])[1];
+              let link = get(/<link[^>]*href="([^"]+)"/).replace(/&amp;/g, "&");
+              try { link = new URL(link).searchParams.get("url") || link; } catch {}
+              return { title: clean(get(/<title[^>]*>([\s\S]*?)<\/title>/)), link, date: get(/<published>([^<]+)/) };
+            });
+            if (!items.length) throw new Error("RSS 沒有抓到任何新聞，請檢查 RSS_URL");
+            require("fs").writeFileSync("news.json", JSON.stringify(items, null, 2));
+            console.log("抓到 " + items.length + " 則");
+          });
+          '
+
+      - name: 存回 repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add news.json
+          git diff --cached --quiet || git commit -m "更新最新消息"
+          git push
+
+      - name: 請 GitHub Pages 重新發布（等於先做好步驟 13）
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds"
