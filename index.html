@@ -157,6 +157,13 @@
           html{scroll-behavior:auto}
           [data-reveal]{opacity:1;transform:none;transition:none}
         }
+
+        .weather-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 20px;width:min(100%,360px);margin:24px auto 16px;padding:14px 18px;text-align:left}
+        .weather-card:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+        .weather-card strong{font-size:14px}
+        .weather-card #today-temp{font-size:24px;font-weight:800;color:var(--accent)}
+        .weather-card #today-summary{font-size:13px;color:var(--muted)}
+        .weather-card .weather-arrow{justify-self:end;color:var(--accent)}
     </style>
 </head>
 <body>
@@ -199,6 +206,12 @@
                     <a href="rps.html" class="btn btn-outline">✊ 線上猜拳對決</a>
                     <a href="#about" class="btn btn-outline">認識我</a>
                 </div>
+                <a class="card weather-card" href="weather.html" aria-label="台北今日天氣與完整預報">
+                    <strong>台北今日天氣</strong>
+                    <span id="today-temp">—</span>
+                    <span id="today-summary" aria-live="polite">正在載入天氣…</span>
+                    <span class="weather-arrow" aria-hidden="true">→</span>
+                </a>
             </div>
 
             <div class="logos" data-reveal style="--rd:420ms">
@@ -756,5 +769,41 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
         render();
     </script>
 
+
+    <script>
+        (() => {
+            const temp = document.getElementById('today-temp');
+            const summary = document.getElementById('today-summary');
+            const query = new URLSearchParams({
+                latitude: '25.033', longitude: '121.5654', timezone: 'Asia/Taipei',
+                current: 'temperature_2m,weather_code',
+                daily: 'precipitation_probability_max,rain_sum,showers_sum',
+                forecast_days: '1'
+            });
+            const conditions = {
+                0:'晴朗', 1:'大致晴朗', 2:'局部多雲', 3:'陰天', 45:'霧', 48:'霧',
+                51:'毛毛雨', 53:'毛毛雨', 55:'毛毛雨', 56:'凍毛毛雨', 57:'凍毛毛雨',
+                61:'小雨', 63:'雨', 65:'大雨', 66:'凍雨', 67:'凍雨',
+                71:'小雪', 73:'雪', 75:'大雪', 77:'雪粒', 80:'陣雨', 81:'陣雨', 82:'強陣雨',
+                85:'陣雪', 86:'陣雪', 95:'雷雨', 96:'雷雨伴冰雹', 99:'雷雨伴冰雹'
+            };
+            fetch('https://api.open-meteo.com/v1/forecast?' + query, { signal: AbortSignal.timeout(10000) })
+                .then(response => {
+                    if (!response.ok) throw new Error('Weather request failed');
+                    return response.json();
+                })
+                .then(({ current, daily }) => {
+                    if (!Number.isFinite(current?.temperature_2m) || !daily) throw new Error('Weather data missing');
+                    const probability = daily.precipitation_probability_max?.[0];
+                    const rain = (daily.rain_sum?.[0] ?? 0) + (daily.showers_sum?.[0] ?? 0);
+                    const rainText = rain > 1 || probability >= 40 ? '可能下雨'
+                        : Number.isFinite(probability) ? '降雨機率低' : '降雨機率暫缺';
+                    temp.textContent = Math.round(current.temperature_2m) + '°C';
+                    summary.textContent = (conditions[current.weather_code] ?? '天況暫缺') + ' · ' + rainText
+                        + (Number.isFinite(probability) ? '（' + probability + '%）' : '') + ' · Open-Meteo';
+                })
+                .catch(() => { summary.textContent = '即時資料暫時無法載入'; });
+        })();
+    </script>
 </body>
 </html>
