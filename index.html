@@ -3,7 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>阮孟杰 - 個人首頁 | Portfolio</title>
+    <title>阮孟杰｜AIoT 與互動網頁作品集</title>
+    <meta name="description" content="阮孟杰｜大同大學資工系，展示智慧物聯網與互動網頁作品">
+    <link rel="canonical" href="https://austenjuan2222.github.io/my-website/">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:url" content="https://austenjuan2222.github.io/my-website/">
+    <meta property="og:title" content="阮孟杰｜AIoT 與互動網頁作品集">
+    <meta property="og:description" content="阮孟杰｜大同大學資工系，展示智慧物聯網與互動網頁作品">
+    <meta property="og:image" content="https://austenjuan2222.github.io/my-website/og.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="深藍底的阮孟杰個人作品集封面">
     <!-- Google Analytics (GA4) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
     <script>
@@ -164,6 +178,12 @@
         .weather-card #today-temp{font-size:24px;font-weight:800;color:var(--accent)}
         .weather-card #today-summary{font-size:13px;color:var(--muted)}
         .weather-card .weather-arrow{justify-self:end;color:var(--accent)}
+
+        .home-share{margin:0 auto 22px;padding:0 20px;text-align:center}
+        .home-share-options{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
+        .home-share-options .btn{min-height:44px;padding:8px 15px;font-size:13px}
+        .home-share-options .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+        .home-share-status:not(:empty){margin-top:6px;color:var(--muted);font-size:13px}
     </style>
 </head>
 <body>
@@ -198,7 +218,7 @@
                 </div>
                 <span class="eyebrow" data-reveal style="--rd:40ms">大同大學資工系 四年級</span>
                 <h1 class="hero-title" data-reveal style="--rd:60ms">你好，我是<br><em>阮孟杰</em></h1>
-                <p class="hero-sub" data-reveal style="--rd:180ms">專注於智慧物聯網（AIoT）專題研究，並積極探索 Vibe Coding 與現代化開發技術。</p>
+                <p class="hero-sub" data-reveal style="--rd:180ms">阮孟杰｜大同大學資工系，展示智慧物聯網與互動網頁作品</p>
                 <div class="hero-actions" data-reveal style="--rd:300ms">
                     <a href="game.html" class="btn btn-primary">🎮 體驗我的小遊戲作品
                         <svg class="i arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -212,6 +232,15 @@
                     <span id="today-summary" aria-live="polite">正在載入天氣…</span>
                     <span class="weather-arrow" aria-hidden="true">→</span>
                 </a>
+            </div>
+
+            <div class="home-share" role="group" aria-label="分享個人網站">
+                <div class="home-share-options">
+                    <a class="btn btn-outline" href="https://social-plugins.line.me/lineit/share?url=https%3A%2F%2Faustenjuan2222.github.io%2Fmy-website%2F" target="_blank" rel="noopener noreferrer">LINE 分享</a>
+                    <a class="btn btn-outline" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Faustenjuan2222.github.io%2Fmy-website%2F" target="_blank" rel="noopener noreferrer">Facebook 分享</a>
+                    <button class="btn btn-outline" id="home-share-button" type="button">複製網址</button>
+                </div>
+                <p class="home-share-status" id="home-share-status" role="status"></p>
             </div>
 
             <div class="logos" data-reveal style="--rd:420ms">
@@ -803,6 +832,34 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
                         + (Number.isFinite(probability) ? '（' + probability + '%）' : '') + ' · Open-Meteo';
                 })
                 .catch(() => { summary.textContent = '即時資料暫時無法載入'; });
+        })();
+    </script>
+    <script>
+        (() => {
+            const button = document.getElementById('home-share-button');
+            const status = document.getElementById('home-share-status');
+            const url = document.querySelector('link[rel="canonical"]').href;
+            const mobileShare = typeof navigator.share === 'function'
+                && window.matchMedia('(pointer: coarse)').matches;
+            if (mobileShare) button.textContent = '手機分享';
+
+            button.addEventListener('click', async () => {
+                status.textContent = '';
+                if (mobileShare) {
+                    try {
+                        await navigator.share({ title: document.title, url });
+                        return;
+                    } catch (error) {
+                        if (error.name === 'AbortError') return;
+                    }
+                }
+                try {
+                    await navigator.clipboard.writeText(url);
+                    status.textContent = '已複製網站網址。';
+                } catch {
+                    status.textContent = '無法自動複製，可以從網址列複製。';
+                }
+            });
         })();
     </script>
 </body>
