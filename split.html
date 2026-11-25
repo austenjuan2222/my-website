@@ -29,8 +29,20 @@
     <link rel="stylesheet" href="tools.css">
     <style>
         .people{display:grid;gap:8px}
-        .person{display:grid;grid-template-columns:1fr 120px 40px;gap:8px;align-items:center}
-        .person .input{min-height:44px;font-size:16px}
+        .person,.dish{display:grid;gap:8px;padding:12px;border-radius:14px;background:rgba(0,0,0,.18);border:1px solid var(--line)}
+        .p-head{display:grid;grid-template-columns:1fr auto 40px;gap:8px;align-items:center}
+        .p-sub{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+        .person .input,.dish .input{min-height:44px;font-size:16px}
+        .p-items{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+        .p-items .input{width:96px;min-height:40px;padding:6px 10px}
+        .add-item{min-height:40px;padding:0 12px;border-radius:12px;border:1px dashed var(--line-strong);background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;transition:transform 140ms var(--ease-out)}
+        .add-item:active{transform:scale(.97)}
+        .d-head{display:grid;grid-template-columns:1fr 110px 40px;gap:8px;align-items:center}
+        .who{display:flex;flex-wrap:wrap;gap:6px}
+        .who button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--muted);font-size:13.5px;font-weight:600;cursor:pointer;transition:color .15s ease,background-color .15s ease,transform 140ms var(--ease-out)}
+        .who button[aria-pressed="true"]{background:rgba(93,240,168,.14);border-color:rgba(93,240,168,.5);color:var(--accent)}
+        .who button:active{transform:scale(.96)}
+        .lines li small{font-weight:500;color:#5c6070;margin-left:6px}
         .icon-btn{width:40px;height:40px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;transition:transform 140ms var(--ease-out),color .15s ease}
         .icon-btn:active{transform:scale(.94)}
         .big{font-size:clamp(40px,12vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
@@ -40,7 +52,7 @@
         .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
         .receipt .btn-primary{background:#14161c;color:#f4f1e8;box-shadow:none}
         .receipt .btn-ghost{background:transparent;border-color:rgba(20,22,28,.25);color:#14161c}
-        @media (max-width:420px){ .person{grid-template-columns:1fr 96px 40px} }
+        @media (max-width:420px){ .d-head{grid-template-columns:1fr 92px 40px} }
     </style>
 </head>
 <body>
@@ -76,11 +88,14 @@
         </div>
 
         <div id="items-form" class="hidden" style="margin-top:18px">
-            <span class="label">每個人自己點的金額</span>
+            <span class="label">每個人自己點的（點幾道就加幾格）</span>
             <div class="people" id="people-list" style="margin-top:8px"></div>
             <button type="button" class="btn btn-ghost btn-sm" id="add-person" style="margin-top:10px">＋ 加一個人</button>
-            <label class="field" style="margin-top:16px"><span class="label">大家一起分的（共用菜、鍋底、運費…）</span>
-                <input class="input" id="shared" type="number" inputmode="decimal" min="0" step="1" placeholder="0"></label>
+            <div style="margin-top:22px">
+                <span class="label">共用的（鍋底、合菜、運費…），點名字選誰要分</span>
+                <div class="people" id="dish-list" style="margin-top:8px"></div>
+                <button type="button" class="btn btn-ghost btn-sm" id="add-dish" style="margin-top:10px">＋ 加一道共用</button>
+            </div>
         </div>
 
         <div style="margin-top:16px;display:grid;gap:2px">
@@ -122,11 +137,27 @@ function calcSplit(opts) {
         const items = (opts.items || []).filter(p => p);
         const n = items.length;
         if (!n) return null;
-        const shared = Math.max(0, Number(opts.shared) || 0);
-        subtotal = items.reduce((s, p) => s + Math.max(0, Number(p.amount) || 0), 0) + shared;
+        const num = (v) => Math.max(0, Number(v) || 0);
+        // 自己點的：amounts 陣列（多道菜）或單一 amount
+        const own = items.map(p => Array.isArray(p.amounts) ? p.amounts.reduce((s, v) => s + num(v), 0) : num(p.amount));
+        // 共用的：數字＝全部人分；陣列 [{amount, who:[索引]}]，who 空的話＝全部人分
+        const dishes = Array.isArray(opts.shared) ? opts.shared : [{ amount: opts.shared }];
+        const share = new Array(n).fill(0);
+        let sharedTotal = 0;
+        dishes.forEach(d => {
+            const amt = num(d && d.amount);
+            if (!amt) return;
+            let who = (d.who || []).filter(i => i >= 0 && i < n);
+            if (!who.length) who = items.map((_, i) => i);
+            who.forEach(i => { share[i] += amt / who.length; });
+            sharedTotal += amt;
+        });
+        subtotal = own.reduce((s, v) => s + v, 0) + sharedTotal;
         rows = items.map((p, i) => ({
             name: (p.name || '').trim() || '第 ' + (i + 1) + ' 位',
-            amount: pay((Math.max(0, Number(p.amount) || 0) + shared / n) * (1 + rate))
+            own: fix(own[i]),
+            share: fix(share[i]),
+            amount: pay((own[i] + share[i]) * (1 + rate))
         }));
     } else {
         const people = Math.floor(Number(opts.people));
@@ -150,35 +181,93 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 let mode = 'even';
 let lastText = '';
 
-function addPerson(name = '', amount = '') {
+let pidSeq = 0;
+function addItemInput(box, value = '') {
+    const inp = document.createElement('input');
+    inp.className = 'input p-amt'; inp.type = 'number'; inp.inputMode = 'decimal'; inp.min = '0'; inp.step = '1';
+    inp.placeholder = '0'; inp.setAttribute('aria-label', '一道菜的金額'); inp.value = value;
+    box.insertBefore(inp, box.querySelector('.add-item'));
+    return inp;
+}
+
+function addPerson(name = '', amounts = ['']) {
     const row = document.createElement('div');
     row.className = 'person';
+    row.dataset.pid = String(++pidSeq);
     const idx = $('people-list').children.length + 1;
-    row.innerHTML = '<input class="input p-name" type="text" maxlength="12" aria-label="名字" placeholder="第 ' + idx + ' 位">' +
-        '<input class="input p-amt" type="number" inputmode="decimal" min="0" step="1" aria-label="點的金額" placeholder="0">' +
-        '<button type="button" class="icon-btn" aria-label="移除這個人">×</button>';
+    row.innerHTML = '<div class="p-head"><input class="input p-name" type="text" maxlength="12" aria-label="名字" placeholder="第 ' + idx + ' 位">' +
+        '<span class="p-sub">小計 $0</span><button type="button" class="icon-btn" aria-label="移除這個人">×</button></div>' +
+        '<div class="p-items"><button type="button" class="add-item">＋ 再一道</button></div>';
     row.querySelector('.p-name').value = name;
-    row.querySelector('.p-amt').value = amount;
-    row.querySelector('button').addEventListener('click', () => {
-        if ($('people-list').children.length > 1) { row.remove(); render(); }
+    const box = row.querySelector('.p-items');
+    amounts.forEach(v => addItemInput(box, v));
+    box.querySelector('.add-item').addEventListener('click', () => { addItemInput(box).focus(); });
+    row.querySelector('.icon-btn').addEventListener('click', () => {
+        if ($('people-list').children.length > 1) { row.remove(); syncWho(); render(); }
     });
     $('people-list').appendChild(row);
+    syncWho();
+}
+
+function addDish(name = '', amount = '') {
+    const row = document.createElement('div');
+    row.className = 'dish';
+    row.dataset.who = 'all';
+    row.innerHTML = '<div class="d-head"><input class="input d-name" type="text" maxlength="12" aria-label="共用項目名稱" placeholder="例如 鍋底">' +
+        '<input class="input d-amt" type="number" inputmode="decimal" min="0" step="1" aria-label="共用金額" placeholder="0">' +
+        '<button type="button" class="icon-btn" aria-label="移除這道">×</button></div><div class="who" role="group" aria-label="誰要分這道"></div>';
+    row.querySelector('.d-name').value = name;
+    row.querySelector('.d-amt').value = amount;
+    row.querySelector('.icon-btn').addEventListener('click', () => { row.remove(); render(); });
+    $('dish-list').appendChild(row);
+    syncWho();
+}
+
+/** 依目前的人名，重畫每道共用菜的「誰要分」按鈕（用 pid 記住選擇，刪人不會錯位） */
+function syncWho() {
+    const people = [...document.querySelectorAll('.person')].map((r, i) => ({ pid: r.dataset.pid, name: r.querySelector('.p-name').value.trim() || '第 ' + (i + 1) + ' 位' }));
+    document.querySelectorAll('.dish').forEach(d => {
+        const sel = d.dataset.who === 'all' ? null : new Set(d.dataset.who.split(',').filter(Boolean));
+        const box = d.querySelector('.who'); box.innerHTML = '';
+        people.forEach(p => {
+            const b = document.createElement('button');
+            b.type = 'button'; b.textContent = p.name; b.dataset.pid = p.pid;
+            b.setAttribute('aria-pressed', String(!sel || sel.has(p.pid)));
+            b.addEventListener('click', () => {
+                b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+                const on = [...box.querySelectorAll('button[aria-pressed="true"]')].map(x => x.dataset.pid);
+                d.dataset.who = on.length === people.length ? 'all' : on.join(',');
+                render();
+            });
+            box.appendChild(b);
+        });
+    });
 }
 
 function readOpts() {
+    const persons = [...document.querySelectorAll('.person')];
+    const pids = persons.map(r => r.dataset.pid);
     return {
         mode,
         total: $('total').value,
         people: $('people').value,
-        shared: $('shared').value,
-        items: [...document.querySelectorAll('.person')].map(r => ({ name: r.querySelector('.p-name').value, amount: r.querySelector('.p-amt').value })),
+        items: persons.map(r => ({ name: r.querySelector('.p-name').value, amounts: [...r.querySelectorAll('.p-amt')].map(i => i.value) })),
+        shared: [...document.querySelectorAll('.dish')].map(d => ({
+            amount: d.querySelector('.d-amt').value,
+            who: d.dataset.who === 'all' ? [] : d.dataset.who.split(',').filter(Boolean).map(pid => pids.indexOf(pid)).filter(i => i >= 0)
+        })),
         service: $('service').checked,
         roundUp: $('roundup').checked
     };
 }
 
 function render() {
-    const r = calcSplit(readOpts());
+    const opts = readOpts();
+    document.querySelectorAll('.person').forEach((row, i) => {
+        const sum = opts.items[i].amounts.reduce((t, v) => t + (Math.max(0, Number(v) || 0)), 0);
+        row.querySelector('.p-sub').textContent = '小計 ' + money(sum);
+    });
+    const r = calcSplit(opts);
     const payer = $('payer').value.trim();
     if (!r) {
         $('result-body').innerHTML = '<p class="muted">' + (mode === 'even' ? '輸入總金額和人數（至少 1 人）。' : '輸入每個人點的金額。') + '</p>';
@@ -191,7 +280,7 @@ function render() {
         html += '<p class="muted" style="font-size:14px">每人付</p><p class="big">' + money(r.rows[0].amount) + '</p>' +
             '<p class="muted" style="margin-top:6px;font-size:14px">共 ' + r.rows.length + ' 人</p>';
     } else {
-        html += '<ul class="lines">' + r.rows.map(x => '<li><span>' + esc(x.name) + '</span><b>' + money(x.amount) + '</b></li>').join('') + '</ul>';
+        html += '<ul class="lines">' + r.rows.map(x => '<li><span>' + esc(x.name) + (x.share ? '<small>自己 ' + money(x.own) + ' ＋ 共用 ' + money(x.share) + '</small>' : '') + '</span><b>' + money(x.amount) + '</b></li>').join('') + '</ul>';
     }
     html += '<hr><ul class="lines muted">' +
         '<li><span>餐點金額</span><span>' + money(r.subtotal) + '</span></li>' +
@@ -220,6 +309,7 @@ document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click'
     render();
 }));
 $('add-person').addEventListener('click', () => { addPerson(); $('people-list').lastElementChild.querySelector('.p-name').focus(); });
+$('add-dish').addEventListener('click', () => { addDish(); $('dish-list').lastElementChild.querySelector('.d-amt').focus(); });
 document.addEventListener('input', render);
 document.addEventListener('change', render);
 
@@ -241,6 +331,8 @@ $('share').addEventListener('click', () => {
 });
 
 for (let i = 0; i < 3; i++) addPerson();
+addDish();
+document.getElementById('people-list').addEventListener('input', (e) => { if (e.target.classList.contains('p-name')) syncWho(); });
 render();
 </script>
 </body>
