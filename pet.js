@@ -13,7 +13,7 @@
                 set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   var muted = store.get('pet-sound') !== '1';    // 音效預設關閉
   var followPref = store.get('pet-follow') !== '0';
-  function canFollow() { return finePointer && !reduce; }
+  function canFollow() { return finePointer; }   // 減少動態時仍可跟隨（由使用者的滑鼠帶動），只關掉自動動畫
   function following() { return canFollow() && followPref; }
 
   /* ---------- DOM ---------- */
@@ -102,7 +102,7 @@
   function ease(t) { return 1 - Math.pow(1 - t, 3); }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function startCrack(silent, target) {
-    if (reduce || crackT >= 0) return;
+    if (crackT >= 0 || (reduce && silent)) return;   // 減少動態：不自動甩，使用者點擊才甩
     crackT = 0; loud = !silent;
     if (target) {
       var dx = target.x - SHOULDER.x, dy = target.y - SHOULDER.y, l = Math.hypot(dx, dy) || 1;
