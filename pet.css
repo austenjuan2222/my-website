@@ -1,0 +1,52 @@
+/* 角落火柴人小寵物「小鞭」 */
+.pet{--pet-accent:#5df0a8;--pet-ink:#f3f6ff;--pet-muted:#9aa6c4;--pet-bg:rgba(10,16,34,.92);--pet-line:rgba(150,175,230,.18);
+  --pet-ease:cubic-bezier(.23,1,.32,1);position:fixed;right:max(8px,env(safe-area-inset-right));bottom:max(6px,env(safe-area-inset-bottom));
+  z-index:60;font-family:'Inter','Noto Sans TC',system-ui,sans-serif;pointer-events:none}
+.pet-canvas{display:block;width:220px;height:200px;pointer-events:none}
+.pet-hit{position:absolute;right:22px;bottom:4px;width:62px;height:120px;border:0;padding:0;background:transparent;cursor:pointer;
+  pointer-events:auto;border-radius:30px;-webkit-tap-highlight-color:transparent}
+.pet-hit:focus-visible{outline:2px solid var(--pet-accent);outline-offset:2px}
+.pet-tip{position:absolute;right:70px;bottom:150px;white-space:nowrap;font-size:12px;color:var(--pet-ink);background:var(--pet-bg);
+  border:1px solid var(--pet-line);padding:6px 10px;border-radius:12px 12px 4px 12px;opacity:0;transform:translateY(4px);
+  transition:opacity .2s ease,transform .2s var(--pet-ease)}
+.pet.show-tip .pet-tip{opacity:1;transform:none}
+.pet.open .pet-tip{opacity:0}
+.pet-chat{position:absolute;right:8px;bottom:186px;width:min(340px,calc(100vw - 32px));max-height:min(460px,calc(100dvh - 220px));
+  display:flex;flex-direction:column;background:var(--pet-bg);color:var(--pet-ink);border:1px solid var(--pet-line);border-radius:18px;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.8);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto;
+  transform-origin:85% 100%;opacity:0;transform:translateY(6px) scale(.96);visibility:hidden;
+  transition:opacity .18s ease,transform .22s var(--pet-ease),visibility 0s linear .22s}
+.pet.open .pet-chat{opacity:1;transform:none;visibility:visible;transition:opacity .18s ease,transform .22s var(--pet-ease),visibility 0s}
+.pet-head{flex:none;display:flex;align-items:center;gap:8px;padding:12px 12px 10px 14px;border-bottom:1px solid var(--pet-line)}
+.pet-head b{font-size:14px}.pet-head small{color:var(--pet-muted);font-size:11px;margin-left:2px}
+.pet-head .sp{flex:1}
+.pet-icon{width:30px;height:30px;border-radius:10px;border:1px solid var(--pet-line);background:transparent;color:var(--pet-muted);cursor:pointer;font-size:14px;
+  transition:transform .14s ease-out,color .15s ease}
+.pet-icon:active{transform:scale(.95)}
+@media (hover:hover) and (pointer:fine){.pet-icon:hover{color:var(--pet-ink)}}
+.pet-log{flex:1;overflow-y:auto;padding:12px 12px 4px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.55;overscroll-behavior:contain}
+.pet-msg{max-width:88%;padding:8px 11px;border-radius:14px;word-break:break-word}
+.pet-msg.bot{align-self:flex-start;background:rgba(93,240,168,.1);border:1px solid rgba(93,240,168,.22);border-bottom-left-radius:4px}
+.pet-msg.me{align-self:flex-end;background:rgba(150,175,230,.14);border-bottom-right-radius:4px}
+.pet-msg.typing{color:var(--pet-muted)}
+.pet-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pet-links a{font-size:12px;color:#032018;background:var(--pet-accent);padding:3px 9px;border-radius:999px;text-decoration:none;font-weight:600}
+.pet-chips{flex:none;display:flex;gap:6px;overflow-x:auto;padding:8px 12px;scrollbar-width:none}
+.pet-chips::-webkit-scrollbar{display:none}
+.pet-chips button{flex:none;font:inherit;font-size:12px;color:var(--pet-ink);background:transparent;border:1px solid var(--pet-line);border-radius:999px;
+  padding:5px 10px;cursor:pointer;transition:transform .14s ease-out,border-color .15s ease}
+.pet-chips button:active{transform:scale(.96)}
+@media (hover:hover) and (pointer:fine){.pet-chips button:hover{border-color:var(--pet-accent)}}
+.pet-form{flex:none;display:flex;gap:6px;padding:0 12px 12px}
+.pet-form input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--pet-ink);background:rgba(255,255,255,.05);border:1px solid var(--pet-line);
+  border-radius:12px;padding:8px 11px;outline:none}
+.pet-form input:focus{border-color:var(--pet-accent)}
+.pet-form button{font:inherit;font-size:14px;font-weight:700;color:#032018;background:var(--pet-accent);border:0;border-radius:12px;padding:0 14px;cursor:pointer;
+  transition:transform .14s ease-out}
+.pet-form button:active{transform:scale(.96)}
+@media (max-width:600px){
+  .pet-canvas{width:154px;height:140px}
+  .pet-hit{right:15px;width:44px;height:84px}
+  .pet-tip{right:48px;bottom:104px}
+  .pet-chat{bottom:132px;right:4px}
+}
