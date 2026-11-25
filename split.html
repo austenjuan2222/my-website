@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>聚餐分帳計算機 | Meng-Jie</title>
+    <meta name="description" content="聚餐 AA 不用再算：輸入金額和人數，自動加服務費、進位，各點各的也能算，一鍵複製結果貼到 LINE 群組。">
+    <meta name="theme-color" content="#04060f">
+    <link rel="icon" type="image/svg+xml" href="favicon-split.svg">
+    <link rel="canonical" href="https://austenjuan2222.github.io/my-website/split.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Meng-Jie">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:url" content="https://austenjuan2222.github.io/my-website/split.html">
+    <meta property="og:title" content="聚餐分帳計算機 | Meng-Jie">
+    <meta property="og:description" content="聚餐 AA 不用再算：輸入金額和人數，自動加服務費、進位，一鍵複製結果貼到 LINE 群組。">
+    <meta property="og:image" content="https://austenjuan2222.github.io/my-website/og-split.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="聚餐分帳計算機：每人應付金額的收據示意">
+    <meta name="twitter:card" content="summary_large_image">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZSVL2PNT60');
+    </script>
+    <link rel="stylesheet" href="tools.css">
+    <style>
+        .people{display:grid;gap:8px}
+        .person{display:grid;grid-template-columns:1fr 120px 40px;gap:8px;align-items:center}
+        .person .input{min-height:44px;font-size:16px}
+        .icon-btn{width:40px;height:40px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;transition:transform 140ms var(--ease-out),color .15s ease}
+        .icon-btn:active{transform:scale(.94)}
+        .big{font-size:clamp(40px,12vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+        .lines{list-style:none;display:grid;gap:6px;font-variant-numeric:tabular-nums}
+        .lines li{display:flex;justify-content:space-between;gap:12px;font-size:15.5px}
+        .lines li b{font-weight:800}
+        .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+        .receipt .btn-primary{background:#14161c;color:#f4f1e8;box-shadow:none}
+        .receipt .btn-ghost{background:transparent;border-color:rgba(20,22,28,.25);color:#14161c}
+        @media (max-width:420px){ .person{grid-template-columns:1fr 96px 40px} }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <nav class="tbar" aria-label="工具導覽">
+        <a class="home" href="index.html"><b>←</b> 首頁</a>
+        <div class="tswitch">
+            <a href="split.html" aria-current="page">💸 分帳</a>
+            <a href="lunch.html">🍱 午餐</a>
+        </div>
+    </nav>
+
+    <header class="head">
+        <span class="eyebrow">Tool 01 · Split the bill</span>
+        <h1>聚餐分帳計算機</h1>
+        <p class="lead">輸入金額就幫你算好每人要付多少，含服務費、自動進位，結果一鍵貼到群組。</p>
+    </header>
+
+    <section class="panel">
+        <h2>分帳方式</h2>
+        <div class="seg" role="group" aria-label="分帳方式">
+            <button type="button" data-mode="even" aria-pressed="true">平均分</button>
+            <button type="button" data-mode="items" aria-pressed="false">各點各的</button>
+        </div>
+
+        <div id="even-form" style="margin-top:18px">
+            <div class="row">
+                <label class="field"><span class="label">總金額（元）</span>
+                    <input class="input" id="total" type="number" inputmode="decimal" min="0" step="1" placeholder="例如 1280"></label>
+                <label class="field"><span class="label">人數</span>
+                    <input class="input" id="people" type="number" inputmode="numeric" min="1" step="1" value="4"></label>
+            </div>
+        </div>
+
+        <div id="items-form" class="hidden" style="margin-top:18px">
+            <span class="label">每個人自己點的金額</span>
+            <div class="people" id="people-list" style="margin-top:8px"></div>
+            <button type="button" class="btn btn-ghost btn-sm" id="add-person" style="margin-top:10px">＋ 加一個人</button>
+            <label class="field" style="margin-top:16px"><span class="label">大家一起分的（共用菜、鍋底、運費…）</span>
+                <input class="input" id="shared" type="number" inputmode="decimal" min="0" step="1" placeholder="0"></label>
+        </div>
+
+        <div style="margin-top:16px;display:grid;gap:2px">
+            <label class="check"><input type="checkbox" id="service"> 加 10% 服務費</label>
+            <label class="check"><input type="checkbox" id="roundup" checked> 每人金額無條件進位到整數元</label>
+        </div>
+        <label class="field" style="margin-top:8px"><span class="label">誰先付錢？（選填，會寫進結果）</span>
+            <input class="input" id="payer" type="text" maxlength="20" placeholder="例如 小明"></label>
+    </section>
+
+    <section class="receipt" id="result" aria-live="polite">
+        <p class="muted" style="font-size:13px;letter-spacing:.12em">RECEIPT · 分帳結果</p>
+        <div id="result-body" style="margin-top:10px">
+            <p class="muted">輸入金額後，結果會出現在這裡。</p>
+        </div>
+        <div class="actions">
+            <button type="button" class="btn btn-primary" id="copy" disabled>📋 複製結果</button>
+            <button type="button" class="btn btn-ghost" id="share" hidden>分享</button>
+        </div>
+        <p class="muted" id="copy-status" role="status" style="min-height:1.4em;margin-top:8px;font-size:14px"></p>
+    </section>
+
+    <p class="foot">資料只在你的瀏覽器計算，不會上傳。 · <a href="lunch.html">不知道吃什麼？用午餐抽籤 →</a></p>
+</div>
+
+<script>
+/**
+ * 分帳計算（純函式，方便測試）
+ * mode 'even'：{total, people}；mode 'items'：{items:[{name, amount}], shared}
+ * 回傳 {rows:[{name, amount}], subtotal, service, grand, collected, extra}
+ */
+function calcSplit(opts) {
+    const rate = opts.service ? 0.1 : 0;
+    const fix = (n) => Math.round(n * 100) / 100;
+    const pay = (n) => opts.roundUp ? Math.ceil(fix(n)) : fix(n);
+    let rows = [];
+    let subtotal = 0;
+    if (opts.mode === 'items') {
+        const items = (opts.items || []).filter(p => p);
+        const n = items.length;
+        if (!n) return null;
+        const shared = Math.max(0, Number(opts.shared) || 0);
+        subtotal = items.reduce((s, p) => s + Math.max(0, Number(p.amount) || 0), 0) + shared;
+        rows = items.map((p, i) => ({
+            name: (p.name || '').trim() || '第 ' + (i + 1) + ' 位',
+            amount: pay((Math.max(0, Number(p.amount) || 0) + shared / n) * (1 + rate))
+        }));
+    } else {
+        const people = Math.floor(Number(opts.people));
+        const total = Number(opts.total);
+        if (!(people >= 1) || !(total > 0)) return null;
+        subtotal = total;
+        const each = pay(total * (1 + rate) / people);
+        rows = Array.from({ length: people }, (_, i) => ({ name: '第 ' + (i + 1) + ' 位', amount: each }));
+    }
+    if (!(subtotal > 0)) return null;
+    const service = fix(subtotal * rate);
+    const grand = fix(subtotal + service);
+    const collected = fix(rows.reduce((s, r) => s + r.amount, 0));
+    return { rows, subtotal: fix(subtotal), service, grand, collected, extra: fix(collected - grand) };
+}
+window.calcSplit = calcSplit;
+
+const $ = (id) => document.getElementById(id);
+const money = (n) => '$' + Number(n).toLocaleString('zh-TW', { maximumFractionDigits: 2 });
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let mode = 'even';
+let lastText = '';
+
+function addPerson(name = '', amount = '') {
+    const row = document.createElement('div');
+    row.className = 'person';
+    const idx = $('people-list').children.length + 1;
+    row.innerHTML = '<input class="input p-name" type="text" maxlength="12" aria-label="名字" placeholder="第 ' + idx + ' 位">' +
+        '<input class="input p-amt" type="number" inputmode="decimal" min="0" step="1" aria-label="點的金額" placeholder="0">' +
+        '<button type="button" class="icon-btn" aria-label="移除這個人">×</button>';
+    row.querySelector('.p-name').value = name;
+    row.querySelector('.p-amt').value = amount;
+    row.querySelector('button').addEventListener('click', () => {
+        if ($('people-list').children.length > 1) { row.remove(); render(); }
+    });
+    $('people-list').appendChild(row);
+}
+
+function readOpts() {
+    return {
+        mode,
+        total: $('total').value,
+        people: $('people').value,
+        shared: $('shared').value,
+        items: [...document.querySelectorAll('.person')].map(r => ({ name: r.querySelector('.p-name').value, amount: r.querySelector('.p-amt').value })),
+        service: $('service').checked,
+        roundUp: $('roundup').checked
+    };
+}
+
+function render() {
+    const r = calcSplit(readOpts());
+    const payer = $('payer').value.trim();
+    if (!r) {
+        $('result-body').innerHTML = '<p class="muted">' + (mode === 'even' ? '輸入總金額和人數（至少 1 人）。' : '輸入每個人點的金額。') + '</p>';
+        $('copy').disabled = true; $('share').hidden = true; lastText = '';
+        return;
+    }
+    const same = r.rows.every(x => x.amount === r.rows[0].amount);
+    let html = '';
+    if (same) {
+        html += '<p class="muted" style="font-size:14px">每人付</p><p class="big">' + money(r.rows[0].amount) + '</p>' +
+            '<p class="muted" style="margin-top:6px;font-size:14px">共 ' + r.rows.length + ' 人</p>';
+    } else {
+        html += '<ul class="lines">' + r.rows.map(x => '<li><span>' + esc(x.name) + '</span><b>' + money(x.amount) + '</b></li>').join('') + '</ul>';
+    }
+    html += '<hr><ul class="lines muted">' +
+        '<li><span>餐點金額</span><span>' + money(r.subtotal) + '</span></li>' +
+        (r.service ? '<li><span>服務費 10%</span><span>' + money(r.service) + '</span></li>' : '') +
+        '<li><span>應付總額</span><span>' + money(r.grand) + '</span></li>' +
+        (r.extra > 0 ? '<li><span>進位後多收（可當零錢／小費）</span><span>' + money(r.extra) + '</span></li>' : '') +
+        '</ul>';
+    if (payer) html += '<p style="margin-top:12px;font-weight:700">請把錢轉給 ' + esc(payer) + ' 🙏</p>';
+    $('result-body').innerHTML = html;
+
+    const lines = ['🧾 聚餐分帳', '應付總額 ' + money(r.grand) + (r.service ? '（含 10% 服務費）' : '')];
+    if (same) lines.push('每人 ' + money(r.rows[0].amount) + ' × ' + r.rows.length + ' 人');
+    else r.rows.forEach(x => lines.push('・' + x.name + '：' + money(x.amount)));
+    if (payer) lines.push('請轉給 ' + payer);
+    lines.push('', '用這個算的 👉 https://austenjuan2222.github.io/my-website/split.html');
+    lastText = lines.join('\n');
+    $('copy').disabled = false;
+    $('share').hidden = !navigator.share;
+}
+
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    $('even-form').classList.toggle('hidden', mode !== 'even');
+    $('items-form').classList.toggle('hidden', mode !== 'items');
+    render();
+}));
+$('add-person').addEventListener('click', () => { addPerson(); $('people-list').lastElementChild.querySelector('.p-name').focus(); });
+document.addEventListener('input', render);
+document.addEventListener('change', render);
+
+$('copy').addEventListener('click', async () => {
+    if (!lastText) return;
+    let ok = false;
+    try { await navigator.clipboard.writeText(lastText); ok = true; } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = lastText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+        ta.remove();
+    }
+    $('copy-status').textContent = ok ? '已複製，貼到 LINE 群組就好了 ✅' : '無法自動複製，請手動選取上面的文字。';
+    if (ok && window.gtag) gtag('event', 'split_copy', { mode });
+});
+$('share').addEventListener('click', () => {
+    navigator.share({ title: '聚餐分帳', text: lastText }).catch(() => {});
+});
+
+for (let i = 0; i < 3; i++) addPerson();
+render();
+</script>
+</body>
+</html>
