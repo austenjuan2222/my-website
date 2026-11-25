@@ -1,5 +1,9 @@
 # 小鞭 AI 代理（Cloudflare Workers AI）
 
+已部署：https://pet-ai.austenjuan4.workers.dev （2026-11-25）
+
+模型會被 Cloudflare 汰換，`MODELS` 依序嘗試，全部失敗時網站自動改用預設問答。要換模型就改這個清單再重新部署。
+
 免費：Workers AI 每天有免費額度，不用綁卡，也不用申請模型金鑰。
 
 ## 方法 A：網頁後台（不用裝任何東西）
