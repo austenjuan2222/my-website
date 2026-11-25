@@ -27,10 +27,11 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 
 /* 頂列：回首頁 + 工具切換 */
 .tbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px;border-radius:999px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-.home{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 14px 0 12px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.05);border:1px solid var(--line-strong);transition:background-color .2s ease,transform 160ms var(--ease-out)}
+.tswitch::-webkit-scrollbar{display:none}
+.home{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 14px 0 12px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.05);border:1px solid var(--line-strong);transition:background-color .2s ease,transform 160ms var(--ease-out)}
 .home b{color:var(--accent)}
 .home:active{transform:scale(.97)}
-.tswitch{display:flex;padding:3px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
+.tswitch{display:flex;min-width:0;overflow-x:auto;scrollbar-width:none;padding:3px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
 .tswitch a{padding:7px 13px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap;transition:color .2s ease,background-color .2s ease}
 .tswitch a[aria-current="page"]{color:var(--ink);background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px var(--line-strong)}
 @media (hover:hover) and (pointer:fine){
@@ -87,5 +88,5 @@ textarea.input{min-height:120px;resize:vertical;line-height:1.6;font-size:16px}
 .foot{margin-top:36px;text-align:center;font-size:13px;color:var(--muted-2)}
 .foot a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 
-@media (max-width:420px){ .tswitch a{padding:7px 10px;font-size:13px} .row{grid-template-columns:1fr} }
+@media (max-width:420px){ .tswitch a{padding:7px 10px;font-size:14px} .tswitch a:not([aria-current]) .t{display:none} .row{grid-template-columns:1fr} }
 @media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important;animation-duration:.01ms !important} }
