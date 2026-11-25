@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>噪音計：用手機測現在有多吵 | Meng-Jie</title>
+    <meta name="description" content="打開就能用手機麥克風測環境音量，即時顯示約略分貝與吵鬧等級，幫你找最安靜的讀書位置。不錄音、不上傳。">
+    <meta name="theme-color" content="#04060f">
+    <link rel="icon" type="image/svg+xml" href="favicon-noise.svg">
+    <link rel="canonical" href="https://austenjuan2222.github.io/my-website/noise.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Meng-Jie">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:url" content="https://austenjuan2222.github.io/my-website/noise.html">
+    <meta property="og:title" content="噪音計：現在有多吵？ | Meng-Jie">
+    <meta property="og:description" content="用手機麥克風測環境音量，即時顯示分貝與吵鬧等級，找最安靜的讀書位置。">
+    <meta property="og:image" content="https://austenjuan2222.github.io/my-website/og-noise.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="噪音計：即時分貝讀數示意">
+    <meta name="twitter:card" content="summary_large_image">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZSVL2PNT60');
+    </script>
+    <link rel="stylesheet" href="tools.css">
+    <style>
+        .meter{text-align:center;padding:clamp(22px,6vw,36px) 18px}
+        .db{font-size:clamp(84px,26vw,128px);font-weight:800;letter-spacing:-.06em;line-height:.9;font-variant-numeric:tabular-nums;color:var(--lvl,var(--ink));transition:color .3s ease}
+        .db small{font-size:.28em;letter-spacing:0;margin-left:4px;color:var(--muted);font-weight:700}
+        .level{margin-top:12px;font-size:20px;font-weight:800;color:var(--lvl,var(--muted));transition:color .3s ease}
+        .level-sub{margin-top:4px;font-size:14px;color:var(--muted);min-height:1.5em}
+        .bar{position:relative;height:14px;margin-top:22px;border-radius:999px;overflow:hidden;background:linear-gradient(90deg,#5df0a8 0%,#5df0a8 35%,#ffd36b 60%,#ff9a5c 78%,#ff5c7a 100%)}
+        .bar i{position:absolute;inset:0 0 0 auto;width:100%;background:rgba(4,6,15,.82);transform-origin:right;transition:transform 90ms linear}
+        .ticks{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--muted-2);font-variant-numeric:tabular-nums}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+        .stat{padding:10px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid var(--line)}
+        .stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+        .stat span{font-size:12.5px;color:var(--muted)}
+        canvas{display:block;width:100%;height:70px;margin-top:16px;border-radius:12px;background:rgba(0,0,0,.25)}
+        .scale{list-style:none;display:grid;gap:6px}
+        .scale li{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;font-size:14.5px;padding:6px 8px;border-radius:10px;transition:background-color .2s ease}
+        .scale li.on{background:rgba(255,255,255,.07)}
+        .scale li b{font-variant-numeric:tabular-nums}
+        .dot{display:inline-block;width:9px;height:9px;border-radius:999px;margin-right:8px;vertical-align:1px}
+        .calib{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13.5px;color:var(--muted)}
+        .calib input{flex:1;accent-color:var(--accent)}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <nav class="tbar" aria-label="工具導覽">
+        <a class="home" href="index.html"><b>←</b> 首頁</a>
+        <div class="tswitch">
+            <a href="split.html" aria-label="分帳">💸<span class="t"> 分帳</span></a>
+            <a href="lunch.html" aria-label="午餐">🍱<span class="t"> 午餐</span></a>
+            <a href="sleep.html" aria-label="睡眠">🌙<span class="t"> 睡眠</span></a>
+            <a href="noise.html" aria-current="page" aria-label="噪音">🔊<span class="t"> 噪音</span></a>
+        </div>
+    </nav>
+
+    <header class="head">
+        <span class="eyebrow">Tool 04 · Noise meter</span>
+        <h1>現在有多吵？</h1>
+        <p class="lead">用手機麥克風即時測環境音量。找讀書位置、比誰最大聲，或確認室友是不是真的太吵。</p>
+    </header>
+
+    <section class="panel meter" style="--lvl:var(--ink)" id="meter">
+        <p class="db" id="db" aria-live="off">--<small>dB</small></p>
+        <p class="level" id="level">尚未開始</p>
+        <p class="level-sub" id="level-sub">按下方按鈕開始測量</p>
+        <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+        <div class="ticks" aria-hidden="true"><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
+        <div class="stats">
+            <div class="stat"><b id="avg">--</b><span>平均</span></div>
+            <div class="stat"><b id="max">--</b><span>最高</span></div>
+            <div class="stat"><b id="time">0:00</b><span>測量時間</span></div>
+        </div>
+        <canvas id="chart" width="600" height="140" aria-label="最近 30 秒音量走勢" role="img"></canvas>
+        <div class="actions" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px">
+            <button type="button" class="btn btn-primary" id="toggle">🎙️ 開始測量</button>
+            <button type="button" class="btn btn-ghost" id="copy" disabled>📋 複製結果</button>
+        </div>
+        <p class="status" id="status" role="status">只在你的手機上分析音量，不錄音、不上傳。</p>
+        <label class="calib">校正 <input type="range" id="calib" min="-15" max="15" step="1" value="0" aria-label="校正偏移"><span id="calib-v" style="width:44px;text-align:right">±0</span></label>
+    </section>
+
+    <section class="panel">
+        <h2>聲音大概有多大</h2>
+        <ul class="scale" id="scale"></ul>
+    </section>
+
+    <p class="foot">手機麥克風不是專業儀器，數值是約略值，可用「校正」對照其他分貝計微調。 · <a href="sleep.html">太吵睡不著？算算幾點睡 →</a></p>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+// 一般手機麥克風在關閉自動增益時，約 dBFS + 94 ≈ dB SPL（約略值，可用校正調整）
+const OFFSET = 94;
+const LEVELS = [
+    { max: 35, name: '非常安靜', sub: '深夜房間、錄音室', color: '#7cc7ff' },
+    { max: 45, name: '圖書館等級', sub: '很適合讀書 📚', color: '#5df0a8' },
+    { max: 55, name: '安靜教室', sub: '還可以專心', color: '#a6f07a' },
+    { max: 65, name: '正常聊天', sub: '有點分心，建議戴耳機', color: '#ffd36b' },
+    { max: 75, name: '吵雜餐廳', sub: '不適合讀書', color: '#ff9a5c' },
+    { max: 85, name: '捷運車廂、大馬路', sub: '長時間待著會累', color: '#ff7a90' },
+    { max: Infinity, name: '非常吵', sub: '超過 85 dB，長時間會傷耳 ⚠️', color: '#ff5c7a' }
+];
+/** 依分貝回傳等級（純函式，方便測試） */
+function levelOf(db) { return LEVELS.find(l => db < l.max); }
+/** RMS（0～1）→ 約略 dB，限制在 20～120 */
+function rmsToDb(rms, calib = 0) {
+    const dbfs = 20 * Math.log10(Math.max(rms, 1e-7));
+    return Math.min(120, Math.max(20, dbfs + OFFSET + calib));
+}
+window.levelOf = levelOf; window.rmsToDb = rmsToDb;
+
+const scale = $('scale');
+LEVELS.forEach((l, i) => {
+    const li = document.createElement('li');
+    const lo = i ? LEVELS[i - 1].max : 0;
+    li.innerHTML = '<b><span class="dot" style="background:' + l.color + '"></span>' + (l.max === Infinity ? '85+' : (lo ? lo + '–' : '<') + l.max) + '</b><span>' + l.name + '・' + l.sub + '</span>';
+    scale.appendChild(li);
+});
+
+let ctx, stream, analyser, buf, raf, startAt, smooth = 0, sum = 0, count = 0, max = 0, history = [], lastPush = 0, calib = 0;
+
+function draw() {
+    analyser.getFloatTimeDomainData(buf);
+    let s = 0;
+    for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+    const db = rmsToDb(Math.sqrt(s / buf.length), calib);
+    smooth = smooth ? smooth * 0.8 + db * 0.2 : db;
+    const v = Math.round(smooth);
+    sum += db; count++; max = Math.max(max, db);
+    const now = performance.now();
+    if (now - lastPush > 250) { history.push(smooth); if (history.length > 120) history.shift(); lastPush = now; render(v); }
+    raf = requestAnimationFrame(draw);
+}
+
+function render(v) {
+    const lvl = levelOf(v);
+    $('db').firstChild.nodeValue = v;
+    $('level').textContent = lvl.name;
+    $('level-sub').textContent = lvl.sub;
+    $('meter').style.setProperty('--lvl', lvl.color);
+    $('bar').style.transform = 'scaleX(' + (1 - Math.min(1, Math.max(0, (v - 20) / 80))) + ')';
+    $('avg').textContent = Math.round(sum / count);
+    $('max').textContent = Math.round(max);
+    const sec = Math.floor((Date.now() - startAt) / 1000);
+    $('time').textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+    [...scale.children].forEach((li, i) => li.classList.toggle('on', LEVELS[i] === lvl));
+    chart();
+}
+
+function chart() {
+    const c = $('chart'), g = c.getContext('2d'), w = c.width, h = c.height;
+    g.clearRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(150,175,230,.15)'; g.lineWidth = 1;
+    [40, 60, 80].forEach(d => { const y = h - (d - 20) / 80 * h; g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); });
+    if (history.length < 2) return;
+    g.beginPath();
+    history.forEach((d, i) => { const x = i / 119 * w, y = h - (Math.min(100, d) - 20) / 80 * h; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.strokeStyle = levelOf(history[history.length - 1]).color; g.lineWidth = 3; g.lineJoin = 'round'; g.stroke();
+}
+
+async function start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        $('status').textContent = '這個瀏覽器不支援麥克風（需要 HTTPS 與較新的瀏覽器）。'; $('status').classList.add('err'); return;
+    }
+    $('toggle').disabled = true; $('status').classList.remove('err');
+    $('status').textContent = '請允許使用麥克風…';
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') await ctx.resume();
+        analyser = ctx.createAnalyser(); analyser.fftSize = 2048;
+        ctx.createMediaStreamSource(stream).connect(analyser);
+        buf = new Float32Array(analyser.fftSize);
+        smooth = 0; sum = 0; count = 0; max = 0; history = []; startAt = Date.now();
+        $('toggle').textContent = '⏹ 停止'; $('copy').disabled = false;
+        $('status').textContent = '測量中… 不錄音、不上傳。';
+        draw();
+        if (window.gtag) gtag('event', 'noise_start');
+    } catch (e) {
+        $('status').classList.add('err');
+        $('status').textContent = e && e.name === 'NotAllowedError' ? '你沒有允許使用麥克風，請到瀏覽器設定開啟後再試。'
+            : e && e.name === 'NotFoundError' ? '找不到麥克風。' : '無法啟動麥克風：' + (e && e.message || e);
+        stop();
+    } finally { $('toggle').disabled = false; }
+}
+
+function stop() {
+    cancelAnimationFrame(raf); raf = null;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (ctx) ctx.close().catch(() => {});
+    stream = ctx = null;
+    $('toggle').textContent = '🎙️ 開始測量';
+    if (count) $('status').textContent = '已停止。平均 ' + Math.round(sum / count) + ' dB、最高 ' + Math.round(max) + ' dB。';
+}
+
+$('toggle').addEventListener('click', () => (raf ? stop() : start()));
+$('calib').addEventListener('input', (e) => { calib = Number(e.target.value); $('calib-v').textContent = (calib > 0 ? '+' : calib < 0 ? '' : '±') + calib; });
+$('copy').addEventListener('click', async () => {
+    if (!count) return;
+    const avg = Math.round(sum / count), lvl = levelOf(avg);
+    const text = '🔊 我這裡平均約 ' + avg + ' dB（' + lvl.name + '），最高 ' + Math.round(max) + ' dB\n你那邊多吵？👉 https://austenjuan2222.github.io/my-website/noise.html';
+    try { await navigator.clipboard.writeText(text); $('status').textContent = '已複製，貼給朋友比比看 ✅'; }
+    catch (e) { $('status').textContent = text; }
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && raf) stop(); });
+chart();
+</script>
+</body>
+</html>

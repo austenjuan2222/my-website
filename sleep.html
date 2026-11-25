@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>睡眠週期計算機：幾點睡才不會醒來很累 | Meng-Jie</title>
+    <meta name="description" content="依 90 分鐘睡眠週期，算出最佳入睡或起床時間，避開熟睡中被鬧鐘叫醒的昏沉感，還能一鍵加到行事曆提醒。">
+    <meta name="theme-color" content="#04060f">
+    <link rel="icon" type="image/svg+xml" href="favicon-sleep.svg">
+    <link rel="canonical" href="https://austenjuan2222.github.io/my-website/sleep.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Meng-Jie">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:url" content="https://austenjuan2222.github.io/my-website/sleep.html">
+    <meta property="og:title" content="睡眠週期計算機 | Meng-Jie">
+    <meta property="og:description" content="依 90 分鐘睡眠週期，算出幾點睡、幾點起床最不累，一鍵加到行事曆提醒。">
+    <meta property="og:image" content="https://austenjuan2222.github.io/my-website/og-sleep.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="睡眠週期計算機：建議入睡時間示意">
+    <meta name="twitter:card" content="summary_large_image">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZSVL2PNT60');
+    </script>
+    <link rel="stylesheet" href="tools.css">
+    <style>
+        .slots{list-style:none;display:grid;gap:10px;margin-top:6px}
+        .slot{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:rgba(20,22,28,.05);border:1px solid rgba(20,22,28,.08)}
+        .slot.best{background:#14161c;color:#f4f1e8;border-color:#14161c}
+        .slot.best .muted{color:#a7abb8}
+        .slot time{font-size:clamp(28px,8vw,36px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+        .slot .meta{font-size:14px;line-height:1.4}
+        .slot .meta b{display:block;font-size:15px}
+        .ics{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(20,22,28,.25);background:transparent;color:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:transform 140ms var(--ease-out)}
+        .slot.best .ics{border-color:rgba(244,241,232,.35)}
+        .ics:active{transform:scale(.96)}
+        .moon{display:flex;gap:4px;margin-top:4px}
+        .moon i{width:8px;height:8px;border-radius:999px;background:currentColor;opacity:.75}
+        .slot.past{opacity:.45}
+        .slot.past .ics{display:none}
+        .tip{margin-top:14px;font-size:14px;line-height:1.7}
+        @media (max-width:380px){ .slot{grid-template-columns:1fr auto} .slot .meta{grid-column:1/-1;grid-row:2} }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <nav class="tbar" aria-label="工具導覽">
+        <a class="home" href="index.html"><b>←</b> 首頁</a>
+        <div class="tswitch">
+            <a href="split.html" aria-label="分帳">💸<span class="t"> 分帳</span></a>
+            <a href="lunch.html" aria-label="午餐">🍱<span class="t"> 午餐</span></a>
+            <a href="sleep.html" aria-current="page" aria-label="睡眠">🌙<span class="t"> 睡眠</span></a>
+            <a href="noise.html" aria-label="噪音">🔊<span class="t"> 噪音</span></a>
+        </div>
+    </nav>
+
+    <header class="head">
+        <span class="eyebrow">Tool 03 · Sleep cycles</span>
+        <h1>幾點睡，<br>起床才不累？</h1>
+        <p class="lead">睡眠大約 90 分鐘一個循環。在循環結束時醒來會比較清醒，在熟睡中被鬧鐘叫醒就會昏沉一整個早上。</p>
+    </header>
+
+    <section class="panel">
+        <div class="seg" role="group" aria-label="計算方式">
+            <button type="button" data-mode="wake" aria-pressed="true">我要幾點起床</button>
+            <button type="button" data-mode="now" aria-pressed="false">現在就睡</button>
+        </div>
+        <div class="row" style="margin-top:18px">
+            <label class="field" id="wake-field"><span class="label">起床時間</span>
+                <input class="input" id="wake" type="time" value="07:30"></label>
+            <label class="field"><span class="label">通常幾分鐘睡著</span>
+                <input class="input" id="fall" type="number" inputmode="numeric" min="0" max="90" step="1" value="15"></label>
+        </div>
+    </section>
+
+    <section class="receipt" aria-live="polite">
+        <p class="muted" style="font-size:13px;letter-spacing:.12em" id="result-title">建議上床時間</p>
+        <ul class="slots" id="slots"></ul>
+        <p class="tip muted" id="tip"></p>
+        <p class="muted" id="ics-status" role="status" style="min-height:1.4em;font-size:14px"></p>
+    </section>
+
+    <p class="foot">睡眠週期因人而異（約 80～110 分鐘），結果僅供參考。 · <a href="noise.html">找安靜的地方讀書？用噪音計 →</a></p>
+</div>
+
+<script>
+const CYCLE = 90;
+const $ = (id) => document.getElementById(id);
+let mode = 'wake';
+
+/**
+ * 睡眠週期計算（純函式）
+ * mode 'wake'：給起床時間，回傳建議上床時間；mode 'now'：給現在時間，回傳建議起床時間
+ * base: Date；fall: 入睡分鐘數 → [{at: Date, cycles, hours}]
+ */
+function sleepPlan(mode, base, fall) {
+    const f = Math.min(90, Math.max(0, Number(fall) || 0));
+    const out = [];
+    for (const n of [6, 5, 4, 3]) {
+        const mins = n * CYCLE + f;
+        const at = new Date(base.getTime() + (mode === 'wake' ? -mins : mins) * 60000);
+        out.push({ at, cycles: n, hours: n * CYCLE / 60 });
+    }
+    return mode === 'wake' ? out : out.reverse();
+}
+window.sleepPlan = sleepPlan;
+
+const pad = (n) => String(n).padStart(2, '0');
+const hhmm = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
+function dayLabel(d) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.round((new Date(d).setHours(0, 0, 0, 0) - today) / 86400000);
+    return diff === 0 ? '今天' : diff === 1 ? '明天' : diff === -1 ? '昨天' : (d.getMonth() + 1) + '/' + d.getDate();
+}
+
+function nextWake() {
+    const [h, m] = ($('wake').value || '07:30').split(':').map(Number);
+    const d = new Date(); d.setSeconds(0, 0); d.setHours(h, m);
+    if (d <= new Date()) d.setDate(d.getDate() + 1);
+    return d;
+}
+
+function render() {
+    const base = mode === 'wake' ? nextWake() : new Date();
+    const plan = sleepPlan(mode, base, $('fall').value);
+    $('result-title').textContent = mode === 'wake' ? '要在 ' + dayLabel(base) + ' ' + hhmm(base) + ' 起床，建議這時候上床' : '現在上床，建議把鬧鐘設在';
+    $('slots').innerHTML = '';
+    plan.forEach(p => {
+        const li = document.createElement('li');
+        const past = p.at < new Date();
+        li.className = 'slot' + (past ? ' past' : p.cycles >= 5 ? ' best' : '');
+        const t = document.createElement('time');
+        t.dateTime = p.at.toISOString(); t.textContent = hhmm(p.at);
+        const meta = document.createElement('div'); meta.className = 'meta';
+        meta.innerHTML = '<b>' + p.cycles + ' 個週期・睡 ' + p.hours + ' 小時</b><span class="muted">' + dayLabel(p.at) + (past ? '・已經過了' : p.cycles === 6 ? '・最充足' : p.cycles === 5 ? '・推薦' : p.cycles === 3 ? '・真的來不及才用' : '') + '</span>' +
+            '<span class="moon" aria-hidden="true">' + '<i></i>'.repeat(p.cycles) + '</span>';
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'ics'; btn.textContent = '⏰ 提醒我';
+        btn.setAttribute('aria-label', hhmm(p.at) + ' 加到行事曆');
+        btn.addEventListener('click', () => downloadIcs(p.at));
+        li.append(t, meta, btn);
+        $('slots').appendChild(li);
+    });
+    const allPast = plan.every(p => p.at < new Date());
+    $('tip').textContent = mode === 'wake' && allPast ? '這些時間都過了 😴 改按上面的「現在就睡」，看鬧鐘該設幾點。' : mode === 'wake'
+        ? '黑色的是推薦時段（睡滿 5～6 個週期）。已經包含 ' + (Number($('fall').value) || 0) + ' 分鐘入睡時間。'
+        : '已經包含 ' + (Number($('fall').value) || 0) + ' 分鐘入睡時間。睡不到 3 個週期的話，乾脆小睡 20 分鐘比較不會昏。';
+}
+
+/** 產生 .ics：時間到提醒（上床或起床） */
+function downloadIcs(at) {
+    const z = (d) => d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z';
+    const title = mode === 'wake' ? '🌙 該上床睡覺了' : '⏰ 起床（睡眠週期結束）';
+    const end = new Date(at.getTime() + 10 * 60000);
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Meng-Jie//sleep//ZH', 'BEGIN:VEVENT',
+        'UID:' + at.getTime() + '@meng-jie-sleep', 'DTSTAMP:' + z(new Date()), 'DTSTART:' + z(at), 'DTEND:' + z(end),
+        'SUMMARY:' + title, 'DESCRIPTION:睡眠週期計算機 https://austenjuan2222.github.io/my-website/sleep.html',
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + title, 'TRIGGER:PT0M', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'sleep-' + hhmm(at).replace(':', '') + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    $('ics-status').textContent = '已下載 ' + hhmm(at) + ' 的提醒，打開檔案就能加到行事曆。';
+    if (window.gtag) gtag('event', 'sleep_reminder', { mode });
+}
+
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    $('wake-field').classList.toggle('hidden', mode !== 'wake');
+    render();
+}));
+$('wake').addEventListener('input', render);
+$('fall').addEventListener('input', render);
+setInterval(() => { if (mode === 'now') render(); }, 30000);
+render();
+</script>
+</body>
+</html>
