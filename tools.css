@@ -1,0 +1,91 @@
+/* 生活小工具共用樣式：沿用首頁色票（深色＋薄荷綠），用「收據／票根」語彙做出跟遊戲頁不同的個性 */
+:root{
+  --bg:#04060f; --ink:#f3f6ff; --muted:#9aa6c4; --muted-2:#6b7796;
+  --line:rgba(150,175,230,.12); --line-strong:rgba(150,175,230,.24);
+  --accent:#5df0a8; --accent-ink:#032018; --warn:#ffd36b; --danger:#ff7a90;
+  --glass:rgba(12,18,38,.6); --panel:rgba(16,24,48,.72);
+  --radius:18px; --ease-out:cubic-bezier(.23,1,.32,1);
+  --font:'Inter','Noto Sans TC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none !important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(70% 50% at 50% -10%, rgba(93,240,168,.10), transparent 60%),
+    radial-gradient(55% 50% at 100% 100%, rgba(124,92,255,.14), transparent 60%),
+    var(--bg) fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(70% 60% at 50% 30%,#000 20%,transparent 80%);mask-image:radial-gradient(70% 60% at 50% 30%,#000 20%,transparent 80%);opacity:.5}
+
+.wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px 16px 56px}
+
+/* 頂列：回首頁 + 工具切換 */
+.tbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px;border-radius:999px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.home{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 14px 0 12px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.05);border:1px solid var(--line-strong);transition:background-color .2s ease,transform 160ms var(--ease-out)}
+.home b{color:var(--accent)}
+.home:active{transform:scale(.97)}
+.tswitch{display:flex;padding:3px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
+.tswitch a{padding:7px 13px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap;transition:color .2s ease,background-color .2s ease}
+.tswitch a[aria-current="page"]{color:var(--ink);background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px var(--line-strong)}
+@media (hover:hover) and (pointer:fine){
+  .home:hover{background:rgba(255,255,255,.1)}
+  .tswitch a:not([aria-current]):hover{color:var(--ink)}
+}
+
+.head{margin:36px 4px 22px}
+.eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+h1{font-size:clamp(32px,8vw,48px);line-height:1.15;letter-spacing:-.03em;font-weight:800}
+.lead{margin-top:10px;color:var(--muted);font-size:15.5px;line-height:1.7}
+
+.panel{padding:clamp(18px,4.5vw,28px);border-radius:var(--radius);background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.panel + .panel{margin-top:14px}
+.panel h2{font-size:15px;font-weight:700;color:var(--muted);margin-bottom:14px;letter-spacing:.02em}
+
+/* 表單 */
+.field{display:grid;gap:7px}
+.field + .field{margin-top:14px}
+.label{font-size:13.5px;font-weight:600;color:var(--muted)}
+.input{width:100%;min-height:48px;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid var(--line-strong);font-size:17px;font-variant-numeric:tabular-nums;transition:border-color .15s ease,box-shadow .15s ease}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,240,168,.18)}
+textarea.input{min-height:120px;resize:vertical;line-height:1.6;font-size:16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* 段落切換（分段控制） */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:rgba(255,255,255,.03);font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,transform 140ms var(--ease-out)}
+.seg button[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.seg button:active{transform:scale(.97)}
+
+.check{display:flex;align-items:center;gap:10px;min-height:40px;font-size:15px;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+
+/* 按鈕 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 22px;border-radius:999px;border:1px solid transparent;font-size:16px;font-weight:700;cursor:pointer;transition:transform 160ms var(--ease-out),background-color .2s ease,opacity .2s ease}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn-primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 24px -10px rgba(93,240,168,.7)}
+.btn-ghost{background:rgba(255,255,255,.05);border-color:var(--line-strong)}
+.btn-sm{min-height:38px;padding:0 14px;font-size:14px}
+.btn-block{width:100%}
+@media (hover:hover) and (pointer:fine){ .btn-ghost:hover{background:rgba(255,255,255,.1)} }
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* 收據樣式的結果卡 */
+.receipt{position:relative;margin-top:14px;padding:22px clamp(18px,4.5vw,28px) 24px;border-radius:var(--radius) var(--radius) 6px 6px;background:#f4f1e8;color:#14161c;
+  -webkit-mask:radial-gradient(circle 7px at 50% 100%,transparent 98%,#000) 0 0/18px 100% repeat-x;mask:radial-gradient(circle 7px at 50% 100%,transparent 98%,#000) 0 0/18px 100% repeat-x;padding-bottom:30px}
+.receipt .muted{color:#5c6070}
+.receipt hr{border:0;border-top:2px dashed rgba(20,22,28,.2);margin:14px 0}
+.status{min-height:1.6em;margin-top:12px;font-size:14px;color:var(--muted)}
+.status.err{color:var(--danger)}
+
+.foot{margin-top:36px;text-align:center;font-size:13px;color:var(--muted-2)}
+.foot a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+
+@media (max-width:420px){ .tswitch a{padding:7px 10px;font-size:13px} .row{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important;animation-duration:.01ms !important} }

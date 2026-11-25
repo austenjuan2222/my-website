@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>午餐吃什麼？附近餐廳抽籤 | Meng-Jie</title>
+    <meta name="description" content="選擇障礙救星：用定位找出附近 300 公尺到 1 公里內的餐廳、小吃和咖啡店，幫你隨機抽一家，附步行距離與 Google 地圖導航。">
+    <meta name="theme-color" content="#04060f">
+    <link rel="icon" type="image/svg+xml" href="favicon-lunch.svg">
+    <link rel="canonical" href="https://austenjuan2222.github.io/my-website/lunch.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Meng-Jie">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:url" content="https://austenjuan2222.github.io/my-website/lunch.html">
+    <meta property="og:title" content="午餐吃什麼？附近餐廳抽籤 | Meng-Jie">
+    <meta property="og:description" content="選擇障礙救星：依定位找出附近的餐廳，幫你隨機抽一家，附步行距離與 Google 地圖導航。">
+    <meta property="og:image" content="https://austenjuan2222.github.io/my-website/og-lunch.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="午餐吃什麼：附近餐廳抽籤結果示意">
+    <meta name="twitter:card" content="summary_large_image">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZSVL2PNT60"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZSVL2PNT60');
+    </script>
+    <link rel="stylesheet" href="tools.css">
+    <style>
+        .opts{display:grid;gap:14px;margin-top:18px}
+        .pick-name{font-size:clamp(28px,8vw,44px);font-weight:800;letter-spacing:-.03em;line-height:1.2;overflow-wrap:anywhere;min-height:1.2em}
+        .pick-name.rolling{opacity:.55;filter:blur(1px)}
+        .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+        .tag{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(20,22,28,.08)}
+        .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+        .receipt .btn-primary{background:#14161c;color:#f4f1e8;box-shadow:none}
+        .receipt .btn-ghost{background:transparent;border-color:rgba(20,22,28,.25);color:#14161c}
+        .list{list-style:none;display:grid;gap:6px;max-height:320px;overflow:auto;margin-top:4px;padding-right:4px}
+        .list li{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:15px}
+        .list li span:last-child{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+        .list li.out{opacity:.4;text-decoration:line-through}
+        .count{font-size:14px;color:var(--muted)}
+        details summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none}
+        details summary::-webkit-details-marker{display:none}
+        details summary::after{content:" ▾";color:var(--muted)}
+        details[open] summary::after{content:" ▴"}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <nav class="tbar" aria-label="工具導覽">
+        <a class="home" href="index.html"><b>←</b> 首頁</a>
+        <div class="tswitch">
+            <a href="split.html">💸 分帳</a>
+            <a href="lunch.html" aria-current="page">🍱 午餐</a>
+        </div>
+    </nav>
+
+    <header class="head">
+        <span class="eyebrow">Tool 02 · Lunch roulette</span>
+        <h1>午餐吃什麼？</h1>
+        <p class="lead">按一下找出你附近的店，再按一下幫你決定。選擇障礙到此為止。</p>
+    </header>
+
+    <section class="panel">
+        <button type="button" class="btn btn-primary btn-block" id="locate">📍 找我附近的餐廳</button>
+        <p class="status" id="status" role="status">會詢問你的位置，只用來搜尋附近店家，不會儲存。</p>
+        <div class="opts">
+            <div class="field"><span class="label">距離</span>
+                <div class="seg" role="group" aria-label="距離" id="radius">
+                    <button type="button" data-v="300" aria-pressed="false">300 m・走 4 分</button>
+                    <button type="button" data-v="500" aria-pressed="true">500 m・走 6 分</button>
+                    <button type="button" data-v="1000" aria-pressed="false">1 km・走 13 分</button>
+                </div>
+            </div>
+            <div class="field"><span class="label">想吃</span>
+                <div class="seg" role="group" aria-label="類型" id="kind">
+                    <button type="button" data-v="all" aria-pressed="true">都可以</button>
+                    <button type="button" data-v="restaurant" aria-pressed="false">餐廳</button>
+                    <button type="button" data-v="fast_food" aria-pressed="false">小吃速食</button>
+                    <button type="button" data-v="cafe" aria-pressed="false">咖啡甜點</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="receipt" id="result" aria-live="polite">
+        <p class="muted" style="font-size:13px;letter-spacing:.12em">TODAY'S PICK · 今天就吃</p>
+        <p class="pick-name" id="pick-name" style="margin-top:10px">？</p>
+        <div class="tags" id="pick-tags"><span class="tag">先找附近的店，或用下面的自訂清單</span></div>
+        <div class="actions">
+            <button type="button" class="btn btn-primary" id="draw" disabled>🎲 幫我選</button>
+            <a class="btn btn-ghost hidden" id="nav" target="_blank" rel="noopener">🧭 Google 地圖導航</a>
+            <button type="button" class="btn btn-ghost hidden" id="skip">🙅 不要這家</button>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-top:14px" id="nearby-panel" hidden>
+        <h2 style="margin-bottom:6px">附近的店 <span class="count" id="count"></span></h2>
+        <ul class="list" id="list"></ul>
+        <p class="count" style="margin-top:10px">店家資料來自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="text-decoration:underline">© OpenStreetMap</a> 貢獻者，可能不完整。</p>
+    </section>
+
+    <details class="panel" style="margin-top:14px" id="custom">
+        <summary>✍️ 用自己的口袋名單抽</summary>
+        <p class="count" style="margin:10px 0">沒開定位、或附近資料太少時用這個。一行一家，會記在這台裝置上。</p>
+        <textarea class="input" id="custom-list" placeholder="學餐&#10;巷口滷肉飯&#10;麥當勞&#10;便利商店"></textarea>
+        <button type="button" class="btn btn-ghost btn-sm" id="use-custom" style="margin-top:10px">用這份清單抽</button>
+    </details>
+
+    <p class="foot">位置只用來搜尋附近店家，不會上傳到這個網站。 · <a href="split.html">吃完要分帳？→</a></p>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const KIND_LABEL = { restaurant: '餐廳', fast_food: '小吃速食', food_court: '美食街', cafe: '咖啡甜點', ice_cream: '冰品甜點' };
+const CUISINE = { chinese: '中式', taiwanese: '台式', japanese: '日式', korean: '韓式', ramen: '拉麵', noodle: '麵食', burger: '漢堡', pizza: '披薩', italian: '義式', thai: '泰式', vietnamese: '越式', indian: '印度', american: '美式', coffee_shop: '咖啡', sushi: '壽司', hot_pot: '火鍋', bubble_tea: '手搖飲', breakfast: '早餐', dumpling: '水餃', vegetarian: '素食', chicken: '炸雞', seafood: '海鮮', curry: '咖哩', western: '西式' };
+const state = { places: [], origin: null, radius: 500, kind: 'all', excluded: new Set(), source: 'none', custom: [], current: null };
+
+function distance(a, b) {
+    const R = 6371000, rad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function kindOf(amenity) {
+    if (amenity === 'restaurant') return 'restaurant';
+    if (amenity === 'cafe' || amenity === 'ice_cream') return 'cafe';
+    return 'fast_food';
+}
+
+/** 向 Overpass 查附近餐飲（一次查 1km，之後只在前端篩距離），失敗會換下一個端點 */
+async function fetchPlaces(lat, lon) {
+    const q = '[out:json][timeout:15];nwr(around:1000,' + lat + ',' + lon + ')["amenity"~"^(restaurant|fast_food|food_court|cafe|ice_cream)$"]["name"];out center 300;';
+    let lastErr;
+    for (const url of ENDPOINTS) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15000);
+        try {
+            const res = await fetch(url, { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctrl.signal });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            const seen = new Set();
+            return (data.elements || []).map(el => {
+                const p = el.type === 'node' ? { lat: el.lat, lon: el.lon } : el.center;
+                const t = el.tags || {};
+                const name = (t['name:zh'] || t.name || '').trim();
+                if (!p || !name) return null;
+                const cuisine = (t.cuisine || '').split(';').map(c => CUISINE[c.trim()]).filter(Boolean);
+                return { name, lat: p.lat, lon: p.lon, amenity: t.amenity, kind: kindOf(t.amenity), cuisine, dist: distance({ lat, lon }, p) };
+            }).filter(p => p && !seen.has(p.name + Math.round(p.dist / 30)) && seen.add(p.name + Math.round(p.dist / 30)))
+              .sort((a, b) => a.dist - b.dist);
+        } catch (e) { lastErr = e; } finally { clearTimeout(timer); }
+    }
+    throw lastErr || new Error('查詢失敗');
+}
+
+function pool() {
+    if (state.source === 'custom') return state.custom.filter(p => !state.excluded.has(p.name));
+    return state.places.filter(p => p.dist <= state.radius && (state.kind === 'all' || p.kind === state.kind) && !state.excluded.has(p.name));
+}
+
+function setStatus(msg, err) { $('status').textContent = msg; $('status').classList.toggle('err', !!err); }
+const walk = (m) => Math.max(1, Math.round(m / 80));
+
+function renderList() {
+    if (state.source !== 'osm') { $('nearby-panel').hidden = true; return; }
+    const inRange = state.places.filter(p => p.dist <= state.radius && (state.kind === 'all' || p.kind === state.kind));
+    $('nearby-panel').hidden = false;
+    $('count').textContent = '（' + inRange.length + ' 家）';
+    $('list').innerHTML = '';
+    inRange.forEach(p => {
+        const li = document.createElement('li');
+        if (state.excluded.has(p.name)) li.className = 'out';
+        const a = document.createElement('span'); a.textContent = p.name + ' · ' + (KIND_LABEL[p.amenity] || '');
+        const b = document.createElement('span'); b.textContent = Math.round(p.dist) + ' m';
+        li.append(a, b); $('list').appendChild(li);
+    });
+    const n = pool().length;
+    $('draw').disabled = n === 0;
+    if (!inRange.length) setStatus('這個範圍內沒找到符合的店，試試把距離拉大或改成「都可以」。', true);
+    else setStatus('找到 ' + inRange.length + ' 家，按「幫我選」！');
+}
+
+function showPick(p) {
+    state.current = p;
+    $('pick-name').textContent = p.name;
+    const tags = $('pick-tags'); tags.innerHTML = '';
+    const add = (t) => { const s = document.createElement('span'); s.className = 'tag'; s.textContent = t; tags.appendChild(s); };
+    if (p.dist != null) { add('📍 ' + Math.round(p.dist) + ' m'); add('🚶 約 ' + walk(p.dist) + ' 分鐘'); }
+    if (p.amenity) add(KIND_LABEL[p.amenity] || '餐飲');
+    (p.cuisine || []).slice(0, 3).forEach(add);
+    if (p.lat != null) {
+        $('nav').href = 'https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=' + p.lat + ',' + p.lon;
+    } else {
+        $('nav').href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.name);
+    }
+    $('nav').classList.remove('hidden');
+    $('skip').classList.remove('hidden');
+}
+
+function draw() {
+    const list = pool();
+    if (!list.length) { setStatus('沒有可以抽的店了，換個條件或清掉「不要這家」。', true); return; }
+    const final = list[Math.floor(Math.random() * list.length)];
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    $('draw').disabled = true;
+    if (reduce || list.length === 1) { showPick(final); $('draw').disabled = false; track(final); return; }
+    // 名字快速輪播後逐漸變慢停下，像抽籤
+    const el = $('pick-name'); el.classList.add('rolling');
+    let i = 0, delay = 45;
+    const tick = () => {
+        el.textContent = list[Math.floor(Math.random() * list.length)].name;
+        i++; delay *= 1.12;
+        if (i < 16) setTimeout(tick, delay);
+        else { el.classList.remove('rolling'); showPick(final); $('draw').disabled = false; track(final); }
+    };
+    tick();
+}
+function track(p) { if (window.gtag) gtag('event', 'lunch_pick', { source: state.source }); }
+
+$('locate').addEventListener('click', () => {
+    if (!('geolocation' in navigator)) { setStatus('這個瀏覽器不支援定位，請用下方的自訂清單。', true); $('custom').open = true; return; }
+    $('locate').disabled = true; setStatus('正在取得你的位置…');
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        state.origin = { lat, lon };
+        setStatus('正在搜尋附近的店…');
+        try {
+            state.places = await fetchPlaces(lat, lon);
+            state.source = 'osm'; state.excluded.clear();
+            renderList();
+            if (!state.places.length) { setStatus('附近 1 公里內查不到店家資料，改用自訂清單吧。', true); $('custom').open = true; }
+        } catch (e) {
+            setStatus('店家資料暫時抓不到（可能是網路或服務忙碌），稍後再試，或先用自訂清單。', true);
+            $('custom').open = true;
+        } finally { $('locate').disabled = false; $('locate').textContent = '🔄 重新定位'; }
+    }, (err) => {
+        $('locate').disabled = false;
+        const msg = err.code === 1 ? '你沒有允許定位。可以到瀏覽器設定開啟，或直接用下方的自訂清單。' : '定位失敗，請到戶外或稍後再試，也可以用自訂清單。';
+        setStatus(msg, true); $('custom').open = true;
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+});
+
+function bindSeg(id, key, cast) {
+    $(id).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        state[key] = cast(b.dataset.v);
+        if (state.source === 'osm') renderList();
+    }));
+}
+bindSeg('radius', 'radius', Number);
+bindSeg('kind', 'kind', String);
+
+$('draw').addEventListener('click', draw);
+$('skip').addEventListener('click', () => {
+    if (state.current) state.excluded.add(state.current.name);
+    renderList();
+    if (pool().length) draw(); else { $('draw').disabled = true; setStatus('都被你排除了 😅 換個條件或重新定位。', true); }
+});
+
+const KEY = 'lunch-custom-list';
+try { $('custom-list').value = localStorage.getItem(KEY) || ''; } catch (e) {}
+$('use-custom').addEventListener('click', () => {
+    const names = [...new Set($('custom-list').value.split('\n').map(s => s.trim()).filter(Boolean))];
+    try { localStorage.setItem(KEY, names.join('\n')); } catch (e) {}
+    if (!names.length) { setStatus('清單是空的，先寫幾家店。', true); return; }
+    state.custom = names.map(name => ({ name }));
+    state.source = 'custom'; state.excluded.clear();
+    $('nearby-panel').hidden = true;
+    $('draw').disabled = false;
+    setStatus('改用你的口袋名單（' + names.length + ' 家），按「幫我選」！');
+    draw();
+});
+
+window.__lunch = { distance, fetchPlaces, state };
+</script>
+</body>
+</html>
