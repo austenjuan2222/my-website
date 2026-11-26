@@ -5,8 +5,9 @@
   'use strict';
   if (window.__petLoaded) return; window.__petLoaded = true;
 
-  var W = 220, H = 200;                          // 畫布邏輯座標
-  var FOOT = { x: 172, y: 196 };                 // 畫布內腳的位置（定位基準）
+  var W = 300, H = 240, OX = 80, OY = 40;        // 畫布邏輯座標；火柴人座標系＝畫布再偏移 (OX, OY)，左上留空間給鞭子
+  var FOOT = { x: 172 + OX, y: 196 + OY };       // 畫布內腳的位置（定位基準）
+  var GROUND = 198;                              // 火柴人座標系的地面
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var finePointer = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
   var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -37,7 +38,7 @@
   var canvas = document.createElement('canvas');
   canvas.className = 'pet-canvas'; canvas.setAttribute('aria-hidden', 'true');
   var hit = document.createElement('button');
-  hit.className = 'pet-hit'; hit.type = 'button';
+  hit.className = 'pet-hit'; hit.type = 'button'; hit.title = '點我問問題';
   hit.setAttribute('aria-label', '小鞭：點我甩鞭子並開啟問答'); hit.setAttribute('aria-expanded', 'false'); hit.setAttribute('aria-controls', 'pet-chat');
   var grab = document.createElement('div');       // 鞭尾抓取點（角落模式才有）
   grab.className = 'pet-grab'; grab.setAttribute('aria-hidden', 'true');
@@ -52,7 +53,7 @@
   var cssW = 220, cssH = 200, scale = 1;
   function sizeCanvas() {
     var small = innerWidth <= 600;
-    cssW = small ? 154 : 220; cssH = small ? 140 : 200; scale = cssW / W;
+    scale = small ? 0.7 : 1; cssW = W * scale; cssH = H * scale;
     canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
@@ -86,24 +87,25 @@
     return { x: innerWidth - (W - FOOT.x) * scale - 8, y: innerHeight - 6 };
   }
   function clampFeet(p) {
-    return { x: Math.max(FOOT.x * scale, Math.min(innerWidth - (W - FOOT.x) * scale, p.x)),
-             y: Math.max(FOOT.y * scale, Math.min(innerHeight - (H - FOOT.y) * scale, p.y)) };
+    return { x: Math.max(70 * scale, Math.min(innerWidth - (W - FOOT.x) * scale, p.x)),
+             y: Math.max(150 * scale, Math.min(innerHeight - (H - FOOT.y) * scale, p.y)) };
   }
   var feet = homeFeet(), pointer = null, pointerIn = false;
 
   /* ---------- 火柴人與鞭子 ---------- */
   var SHOULDER = { x: 172, y: 118 }, IDLE_HAND = { x: 146, y: 132 };
-  var N = 20, SEG = 6, pts = [];
+  var N = 26, SEG = 6, pts = [];
   for (var i = 0; i < N; i++) pts.push({ x: IDLE_HAND.x - i * 2, y: IDLE_HAND.y + i * SEG * 0.95, px: IDLE_HAND.x - i * 2, py: IDLE_HAND.y + i * SEG * 0.95 });
   var hand = { x: IDLE_HAND.x, y: IDLE_HAND.y }, elbow = { x: 158, y: 130 };
   var crackT = -1, crackDir = { x: -0.92, y: 0.38 }, loud = false, cooldown = 0, sparks = [], dragging = false, dragPt = null;
-  var look = { x: 0, y: 0 }, blinkAt = 2.5, blinkUntil = 0, time = 0, interacted = false, walkPhase = 0, walkSpeed = 0;
+  var look = { x: 0, y: 0 }, blinkAt = 2.5, blinkUntil = 0, time = 0, interacted = false, walkPhase = 0, walkSpeed = 0, walkDir = -1;
+  var rings = [], kicked = false;
 
   function ease(t) { return 1 - Math.pow(1 - t, 3); }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function startCrack(silent, target) {
     if (crackT >= 0 || (reduce && silent)) return;   // 減少動態：不自動甩，使用者點擊才甩
-    crackT = 0; loud = !silent;
+    crackT = 0; loud = !silent; kicked = false;
     if (target) {
       var dx = target.x - SHOULDER.x, dy = target.y - SHOULDER.y, l = Math.hypot(dx, dy) || 1;
       crackDir = { x: Math.min(-0.25, dx / l), y: dy / l }; var l2 = Math.hypot(crackDir.x, crackDir.y); crackDir.x /= l2; crackDir.y /= l2;
@@ -114,25 +116,40 @@
     var bob = reduce ? 0 : Math.sin(time * 2) * 1.2;
     if (crackT < 0) return { x: IDLE_HAND.x + (reduce ? 0 : Math.sin(time * 1.3) * 2), y: IDLE_HAND.y + bob };
     crackT += dt;
-    var wind = { x: SHOULDER.x - crackDir.x * 22 + 4, y: SHOULDER.y - crackDir.y * 22 - 40 };
-    var snap = { x: SHOULDER.x + crackDir.x * 46, y: SHOULDER.y + crackDir.y * 46 }, t = crackT;
-    if (t < 0.15) return { x: lerp(IDLE_HAND.x, wind.x, ease(t / 0.15)), y: lerp(IDLE_HAND.y, wind.y, ease(t / 0.15)) };
-    if (t < 0.25) return { x: lerp(wind.x, snap.x, ease((t - 0.15) / 0.1)), y: lerp(wind.y, snap.y, ease((t - 0.15) / 0.1)) };
-    if (t < 0.6) return { x: lerp(snap.x, IDLE_HAND.x, ease((t - 0.25) / 0.35)), y: lerp(snap.y, IDLE_HAND.y, ease((t - 0.25) / 0.35)) };
+    // 大幅後拉過頭 → 0.08 秒內猛力揮出 → 收回
+    var wind = { x: SHOULDER.x - crackDir.x * 30 + 10, y: SHOULDER.y - crackDir.y * 30 - 52 };
+    var snap = { x: SHOULDER.x + crackDir.x * 58, y: SHOULDER.y + crackDir.y * 58 }, t = crackT;
+    if (t < 0.16) return { x: lerp(IDLE_HAND.x, wind.x, ease(t / 0.16)), y: lerp(IDLE_HAND.y, wind.y, ease(t / 0.16)) };
+    if (t < 0.24) {
+      if (!kicked) {   // 揮出瞬間給整條鞭子一股往前的力，越靠近鞭尾越大
+        kicked = true;
+        for (var i = 2; i < N; i++) { var f = 16 * Math.pow(i / N, 1.6); pts[i].px -= crackDir.x * f; pts[i].py -= crackDir.y * f - f * 0.25; }
+      }
+      return { x: lerp(wind.x, snap.x, ease((t - 0.16) / 0.08)), y: lerp(wind.y, snap.y, ease((t - 0.16) / 0.08)) };
+    }
+    if (t < 0.6) return { x: lerp(snap.x, IDLE_HAND.x, ease((t - 0.24) / 0.36)), y: lerp(snap.y, IDLE_HAND.y, ease((t - 0.24) / 0.36)) };
     crackT = -1; return { x: IDLE_HAND.x, y: IDLE_HAND.y };
   }
 
+  var moveGoal = null;
   function moveFeet() {
-    var target = (following() && pointer && pointerIn && !root.classList.contains('open'))
-      ? clampFeet({ x: pointer.x + 70, y: pointer.y + 100 }) : clampFeet(homeFeet());
+    var target;
+    if (following() && pointer && pointerIn && !root.classList.contains('open')) {
+      // 牽繩式跟隨：游標離小鞭身體 170px 以內就站著不動（方便直接點牠、也比較不擋字）
+      var body = { x: feet.x, y: feet.y - 70 * scale };
+      if (!moveGoal || Math.hypot(pointer.x - body.x, pointer.y - body.y) > 170 * scale) moveGoal = clampFeet({ x: pointer.x + 70, y: pointer.y + 100 });
+      target = moveGoal;
+    } else { moveGoal = null; target = clampFeet(homeFeet()); }
     var dx = target.x - feet.x, dy = target.y - feet.y, d = Math.hypot(dx, dy);
     var sp = Math.min(d * 0.09, 11);
     var mx = d > 0.5 ? dx / d * sp : 0, my = d > 0.5 ? dy / d * sp : 0;
     feet.x += mx; feet.y += my; walkSpeed = sp;
+    if (mx > 0.4) walkDir = 1; else if (mx < -0.4) walkDir = -1;
     // 畫布跟著移動：鞭子留在原本的世界位置（保留慣性，所以走動時會拖著甩）
     var lx = mx / scale, ly = my / scale;
     for (var i = 1; i < N; i++) { pts[i].x -= lx; pts[i].y -= ly; pts[i].px -= lx; pts[i].py -= ly; }
     for (var k = 0; k < sparks.length; k++) { sparks[k].x -= lx; sparks[k].y -= ly; }
+    for (var q = 0; q < rings.length; q++) { rings[q].x -= lx; rings[q].y -= ly; }
   }
 
   function step(dt) {
@@ -149,7 +166,7 @@
       if (dragging && i === N - 1) continue;
       var vx = (p.x - p.px) * 0.985, vy = (p.y - p.py) * 0.985;
       p.px = p.x; p.py = p.y; p.x += vx; p.y += vy + 0.32;
-      if (p.y > H - 3) { p.y = H - 3; p.px = p.x - vx * 0.6; }
+      if (p.y > GROUND) { p.y = GROUND; p.px = p.x - vx * 0.6; }
     }
     if (dragging && dragPt) { var tp0 = pts[N - 1]; tp0.px = tp0.x; tp0.py = tp0.y; tp0.x = dragPt.x; tp0.y = dragPt.y; }
     var hx = hand.x - elbow.x, hy = hand.y - elbow.y, hl = Math.hypot(hx, hy) || 1;
@@ -169,8 +186,9 @@
     if (speed > 13 && cooldown === 0) {
       cooldown = 0.35;
       if (interacted && (loud || dragging)) crackSound(speed);
-      for (var s = 0; s < 9; s++) {
-        var ang = Math.random() * Math.PI * 2, v = 1 + Math.random() * 2.5;
+      rings.push({ x: tp.x, y: tp.y, r: 2, life: 1 });
+      for (var s = 0; s < 16; s++) {
+        var ang = Math.random() * Math.PI * 2, v = 1.5 + Math.random() * 4;
         sparks.push({ x: tp.x, y: tp.y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life: 1 });
       }
     }
@@ -178,6 +196,7 @@
       var sp = sparks[k]; sp.x += sp.vx; sp.y += sp.vy; sp.vx *= 0.92; sp.vy *= 0.92; sp.life -= dt * 3;
       if (sp.life <= 0) sparks.splice(k, 1);
     }
+    for (var rr = rings.length - 1; rr >= 0; rr--) { rings[rr].r += 2.2; rings[rr].life -= dt * 3.2; if (rings[rr].life <= 0) rings.splice(rr, 1); }
     // 眼睛看滑鼠
     var head = toClient(172, 96), tx = 0, ty = 0;
     if (pointer && head) { var ex = pointer.x - head.x, ey = pointer.y - head.y, el = Math.hypot(ex, ey) || 1; tx = ex / el * 2.6; ty = ey / el * 2; }
@@ -193,13 +212,24 @@
 
   function draw() {
     ctx.clearRect(0, 0, W, H);
+    ctx.save(); ctx.translate(OX, OY);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     var ink = '#eef2ff', walking = walkSpeed > 0.6, bob = reduce ? 0 : (walking ? Math.abs(Math.sin(walkPhase)) * -2 : Math.sin(time * 2) * 1.2);
     var sw = walking ? Math.sin(walkPhase) * 12 : 0, lift = walking ? Math.max(0, Math.cos(walkPhase)) * 4 : 0;
+    var skip = walking && walkDir > 0, hop = 0, lean = 0;
+    if (skip && !reduce) { hop = Math.abs(Math.sin(walkPhase * 0.75)) * 11; bob = -hop; lean = 5; }   // 往右走：蹦蹦跳的跳步
     ctx.fillStyle = 'rgba(93,240,168,.12)'; ctx.beginPath(); ctx.ellipse(172, 196, 22, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-    line([160 + sw, 195 - lift, 172, 150 + bob, 185 - sw, 195 - (walking ? Math.max(0, -Math.cos(walkPhase)) * 4 : 0)], 4, ink);
-    line([172, 150 + bob, 172, 110 + bob], 4, ink);
-    line([172, 118 + bob, 190, 130 + bob, 182, 144 + bob], 3.5, ink);
+    if (skip) {
+      var k = Math.sin(walkPhase * 0.75);   // 一腳往前踢、一腳彎膝收起
+      line([172, 150 + bob, 180 + k * 6, 172 + bob, 186 + k * 10, 194 - hop * 0.6], 4, ink);
+      line([172, 150 + bob, 170 - k * 4, 170 + bob, 160 - k * 4, 186 + bob * 0.4], 4, ink);
+      line([172, 150 + bob, 172 + lean, 110 + bob], 4, ink);
+      line([172 + lean * 0.8, 118 + bob, 194 + lean, 112 + bob - hop * 0.6, 200 + lean, 100 + bob - hop], 3.5, ink);   // 空手高舉
+    } else {
+      line([160 + sw, 195 - lift, 172, 150 + bob, 185 - sw, 195 - (walking ? Math.max(0, -Math.cos(walkPhase)) * 4 : 0)], 4, ink);
+      line([172, 150 + bob, 172, 110 + bob], 4, ink);
+      line([172, 118 + bob, 190, 130 + bob, 182, 144 + bob], 3.5, ink);
+    }
     // 鞭子
     ctx.save(); ctx.shadowColor = 'rgba(93,240,168,.55)'; ctx.shadowBlur = 6;
     ctx.beginPath(); ctx.moveTo(pts[1].x, pts[1].y);
@@ -221,12 +251,15 @@
       if (time < blinkUntil) { ctx.beginPath(); ctx.moveTo(ex - 2, ey); ctx.lineTo(ex + 2, ey); ctx.stroke(); }
       else { ctx.beginPath(); ctx.arc(ex, ey, 1.8, 0, Math.PI * 2); ctx.fill(); }
     });
-    sparks.forEach(function (s) { ctx.fillStyle = 'rgba(220,255,236,' + Math.max(0, s.life) + ')'; ctx.fillRect(s.x - 1.2, s.y - 1.2, 2.4, 2.4); });
+    sparks.forEach(function (s) { ctx.fillStyle = 'rgba(220,255,236,' + Math.max(0, s.life) + ')'; ctx.fillRect(s.x - 1.6, s.y - 1.6, 3.2, 3.2); });
+    rings.forEach(function (g) { ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(93,240,168,' + Math.max(0, g.life) * 0.8 + ')'; ctx.stroke(); });
+    ctx.restore();
   }
 
   function origin() { return { x: feet.x - FOOT.x * scale, y: feet.y - FOOT.y * scale }; }
-  function toClient(x, y) { var o = origin(); return { x: o.x + x * scale, y: o.y + y * scale }; }
-  function toLocal(cx, cy) { var o = origin(); return { x: (cx - o.x) / scale, y: (cy - o.y) / scale }; }
+  // 以下兩個函式都用火柴人座標系（畫布座標減 OX/OY）
+  function toClient(x, y) { var o = origin(); return { x: o.x + (x + OX) * scale, y: o.y + (y + OY) * scale }; }
+  function toLocal(cx, cy) { var o = origin(); return { x: (cx - o.x) / scale - OX, y: (cy - o.y) / scale - OY }; }
 
   // 壓到文字時變淡，避免擋住閱讀
   var TEXTY = /^(P|H[1-6]|LI|A|SPAN|STRONG|EM|B|I|LABEL|TD|TH|BLOCKQUOTE|SMALL|CODE)$/;
@@ -262,7 +295,7 @@
     followBtn.textContent = followPref ? '🐾' : '📌';
     followBtn.setAttribute('aria-label', followPref ? '讓小鞭待在角落' : '讓小鞭跟著滑鼠');
     followBtn.title = followBtn.getAttribute('aria-label');
-    tip.textContent = f ? '點畫面空白處我就甩鞭！按右下角問我問題' : '點我問問題，或拖鞭子甩甩看！';
+    tip.textContent = f ? '點我問問題，點畫面空白處我就甩鞭！' : '點我問問題，或拖鞭子甩甩看！';
   }
   function syncMute() {
     muteBtn.textContent = muted ? '🔇' : '🔊';
@@ -288,7 +321,7 @@
     e.preventDefault(); interacted = true; dragging = true; dragPt = toLocal(e.clientX, e.clientY);
     grab.setPointerCapture(e.pointerId); grab.style.cursor = 'grabbing';
   });
-  grab.addEventListener('pointermove', function (e) { if (dragging) { var p = toLocal(e.clientX, e.clientY); dragPt = { x: Math.max(3, Math.min(W - 3, p.x)), y: Math.max(3, Math.min(H - 3, p.y)) }; } });
+  grab.addEventListener('pointermove', function (e) { if (dragging) { var p = toLocal(e.clientX, e.clientY); dragPt = { x: Math.max(3 - OX, Math.min(W - OX - 3, p.x)), y: Math.max(3 - OY, Math.min(GROUND, p.y)) }; } });
   function release() { dragging = false; dragPt = null; grab.style.cursor = ''; }
   grab.addEventListener('pointerup', release); grab.addEventListener('pointercancel', release);
 
@@ -354,8 +387,8 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('open')) { setOpen(false); (following() ? launch : hit).focus(); } });
 
   // 第一次來：甩一下＋提示泡泡
-  if (!store.get('pet-seen-2')) {
-    setTimeout(function () { startCrack(true); root.classList.add('show-tip'); store.set('pet-seen-2', '1'); }, 2200);
+  if (!store.get('pet-seen-3')) {
+    setTimeout(function () { startCrack(true); root.classList.add('show-tip'); store.set('pet-seen-3', '1'); }, 2200);
     setTimeout(function () { root.classList.remove('show-tip'); }, 8000);
   }
   if (!reduce) setInterval(function () { if (!document.hidden && !dragging && !following() && Math.random() < 0.5) startCrack(true); }, 14000);
